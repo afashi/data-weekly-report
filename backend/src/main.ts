@@ -6,6 +6,9 @@ import {BigIntToStringInterceptor} from './common/interceptors/bigint-to-string.
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
+    // 获取配置服务
+    const appConfig = app.get('APP_CONFIG');
+
     // 全局启用验证管道
     app.useGlobalPipes(
         new ValidationPipe({
@@ -26,7 +29,7 @@ async function bootstrap() {
 
     // 启用 CORS（允许前端跨域请求）
     app.enableCors({
-        origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+        origin: appConfig.server.corsOrigin,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
     });
@@ -34,12 +37,12 @@ async function bootstrap() {
     // 设置全局路由前缀
     app.setGlobalPrefix('api');
 
-    const port = process.env.PORT || 3000;
+    const port = appConfig.server.port;
     await app.listen(port);
 
     console.log(`🚀 应用已启动：http://localhost:${port}`);
     console.log(`📡 API 端点：http://localhost:${port}/api`);
-    console.log(`📊 健康检查：http://localhost:${port}/api/health`);
+    console.log(`📊 健康检查：http://localhost:${port}/api/generate/health`);
 }
 
 bootstrap();

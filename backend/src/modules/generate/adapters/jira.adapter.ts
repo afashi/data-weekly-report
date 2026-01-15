@@ -59,7 +59,7 @@ export class JiraAdapter {
      */
     async healthCheck(): Promise<boolean> {
         try {
-            await this.axiosInstance.get('/rest/api/3/myself');
+            await this.axiosInstance.get('/rest/api/2/myself');
             this.logger.log('Jira API 健康检查成功');
             return true;
         } catch (error) {
@@ -75,7 +75,7 @@ export class JiraAdapter {
      */
     private async executeJqlQuery(jql: string): Promise<NormalizedTask[]> {
         try {
-            const response = await this.axiosInstance.post<JiraSearchResponse>('/rest/api/3/search', {
+            const response = await this.axiosInstance.post<JiraSearchResponse>('/rest/api/2/search', {
                 jql,
                 fields: this.config.fields,
                 maxResults: 1000, // 每次最多获取 1000 条

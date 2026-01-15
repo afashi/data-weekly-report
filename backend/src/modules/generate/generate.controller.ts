@@ -6,7 +6,7 @@ import {GenerateReportDto, ReportResponseDto} from './dto/generate.dto';
  * 周报生成 Controller
  * 提供 REST API 端点
  */
-@Controller('api/generate')
+@Controller('generate')
 export class GenerateController {
     private readonly logger = new Logger(GenerateController.name);
 
