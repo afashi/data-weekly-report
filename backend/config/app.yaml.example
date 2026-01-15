@@ -1,0 +1,83 @@
+# 数据周报自动化系统 - 配置文件
+# 请复制此文件为 app.yaml 并填入真实配置
+
+server:
+  port: 3000
+  corsOrigin: "http://localhost:5173"  # 前端开发服务器地址
+
+database:
+  path: "data/weekly-report.sqlite"
+
+id:
+  workerId: 1
+  datacenterId: 1
+
+jira:
+  baseUrl: "https://your-domain.atlassian.net"
+  email: "your-email@example.com"
+  apiToken: "YOUR_JIRA_API_TOKEN"
+  jql:
+    done: "project = DATADEV AND issuetype = 数据加工 AND status = Done AND updated >= startOfWeek()"
+    plan: "project = DATADEV AND issuetype = 数据加工 AND status in (Open, \"In Progress\")"
+  fields:
+    - "summary"
+    - "status"
+    - "assignee"
+    - "customfield_10016"  # 预计工期（根据实际字段调整）
+    - "customfield_10017"  # 环境状态（根据实际字段调整）
+
+# PostgreSQL 外部数据库配置
+externalDatabases:
+  - name: "brv_db"
+    type: "postgres"
+    host: "192.168.0.51"
+    port: 5432
+    database: "tjfj"
+    username: "PLACEHOLDER_USER"
+    password: "PLACEHOLDER_PASSWORD"
+    connectTimeoutMs: 5000
+    queryTimeoutMs: 15000
+    ssl: false
+
+  - name: "rev_db"
+    type: "postgres"
+    host: "192.168.0.45"
+    port: 5432
+    database: "tjfj"
+    username: "PLACEHOLDER_USER"
+    password: "PLACEHOLDER_PASSWORD"
+    connectTimeoutMs: 5000
+    queryTimeoutMs: 15000
+    ssl: false
+
+sqlQueries:
+  # 从 brv_db 查询指标
+  metrics_brv: |
+    SELECT
+      'PROCESS_COUNT' as metric_key,
+      COUNT(*)::text as metric_value,
+      'normal' as status_code
+    FROM data_processing_records
+    WHERE EXTRACT(WEEK FROM created_at) = $1
+
+  # 从 rev_db 查询 ETL 状态
+  etl_status_rev: |
+    SELECT
+      env_type as metric_key,
+      start_time::text as metric_value,
+      CASE
+        WHEN end_time IS NULL THEN 'loading'
+        ELSE 'success'
+      END as status_code
+    FROM etl_logs
+    WHERE week_number = $1
+    ORDER BY start_time DESC
+    LIMIT 2
+
+excel:
+  templatePath: "数据周报_模板.xlsx"
+  indentSize: 4
+
+ui:
+  theme: "modern"
+  primaryColor: "#1677ff"
