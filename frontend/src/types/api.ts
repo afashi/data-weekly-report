@@ -49,7 +49,7 @@ export interface ReportItemDto {
 /**
  * 业务内容结构（从 contentJson 解析）
  */
-export interface TaskContent {
+export interface ApiTaskContent {
   jiraKey: string; // Jira 号
   title: string; // 任务标题
   status: string; // 状态
@@ -69,4 +69,60 @@ export interface HealthCheckResponse {
     sql: Record<string, boolean>;
     database: boolean;
   };
+}
+
+/**
+ * 周报列表项
+ */
+export interface ReportListItem {
+  id: string;
+  weekRange: string;
+  weekNumber: number;
+  createdAt: string;
+}
+
+/**
+ * 周报列表响应
+ */
+export interface ReportListResponse {
+  items: ReportListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/**
+ * 周报详情响应
+ */
+export interface ReportDetailResponse {
+  id: string;
+  weekRange: string;
+  weekNumber: number;
+  createdAt: string;
+  metrics: MetricDto[];
+  items: ReportItemDto[];
+  notes: string;
+}
+
+/**
+ * 条目更新响应
+ */
+export interface ItemResponse {
+  id: string;
+  reportId: string;
+  tabType: string;
+  sourceType: string;
+  parentId: string | null;
+  contentJson: Record<string, any>;
+  sortOrder: number;
+}
+
+/**
+ * 会议待办响应
+ */
+export interface NotesResponse {
+  id: string;
+  reportId: string;
+  content: string;
 }

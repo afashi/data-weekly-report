@@ -3,6 +3,10 @@ import {TypeOrmModule} from '@nestjs/typeorm';
 import {ConfigAppModule} from './config/config.module';
 import {IdModule} from './modules/id/id.module';
 import {GenerateModule} from './modules/generate/generate.module';
+import {ReportsModule} from './modules/reports/reports.module';
+import {ItemsModule} from './modules/items/items.module';
+import {NotesModule} from './modules/notes/notes.module';
+import {ExportModule} from './modules/export/export.module';
 import {createDataSource} from './config/typeorm.config';
 import {AppConfig} from './config/config.types';
 import {DataSource} from 'typeorm';
@@ -37,11 +41,17 @@ import {DataSource} from 'typeorm';
         // 周报生成模块
         GenerateModule,
 
-        // TODO: 添加其他业务模块
-        // ReportsModule (查询历史报告)
-        // ItemsModule (管理条目)
-        // NotesModule (管理会议备注)
-        // ExportModule (Excel 导出)
+        // 周报管理模块（查询历史报告）
+        ReportsModule,
+
+        // 条目管理模块（单行编辑）
+        ItemsModule,
+
+        // 会议待办模块（会议备注保存）
+        NotesModule,
+
+        // Excel 导出模块
+        ExportModule,
     ],
     controllers: [],
     providers: [],

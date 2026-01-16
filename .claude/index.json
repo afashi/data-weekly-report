@@ -1,0 +1,302 @@
+{
+  "projectName": "data-weekly-report",
+  "lastUpdated": "2026-01-16T00:00:00.000Z",
+  "version": "1.0.0",
+  "scanTimestamp": "2026-01-16T00:00:00.000Z",
+  "coverage": {
+    "totalFiles": 95,
+    "scannedFiles": 85,
+    "coveragePercentage": 89.47,
+    "ignoredFiles": 10,
+    "ignoredPatterns": [
+      "node_modules/**",
+      ".git/**",
+      "dist/**",
+      "build/**",
+      "*.lock",
+      "*.log"
+    ]
+  },
+  "modules": [
+    {
+      "name": "backend",
+      "path": "backend/",
+      "language": "TypeScript",
+      "framework": "NestJS",
+      "status": "partial",
+      "completeness": 70,
+      "entryPoints": [
+        "src/main.ts"
+      ],
+      "keyFiles": {
+        "entities": [
+          "src/entities/report.entity.ts",
+          "src/entities/system-metric.entity.ts",
+          "src/entities/report-item.entity.ts",
+          "src/entities/meeting-note.entity.ts"
+        ],
+        "services": [
+          "src/modules/generate/generate.service.ts",
+          "src/modules/id/id.service.ts"
+        ],
+        "controllers": [
+          "src/modules/generate/generate.controller.ts"
+        ],
+        "adapters": [
+          "src/modules/generate/adapters/jira.adapter.ts",
+          "src/modules/generate/adapters/sql.adapter.ts"
+        ],
+        "migrations": [
+          "src/migrations/1736931600000-InitDatabase.ts"
+        ],
+        "config": [
+          "src/config/config.module.ts",
+          "src/config/config.schema.ts",
+          "src/config/typeorm.config.ts"
+        ]
+      },
+      "dependencies": {
+        "runtime": [
+          "@nestjs/common",
+          "@nestjs/typeorm",
+          "typeorm",
+          "axios",
+          "pg",
+          "sqlite3",
+          "nodejs-snowflake",
+          "exceljs",
+          "date-fns",
+          "zod"
+        ],
+        "dev": [
+          "@nestjs/cli",
+          "typescript",
+          "eslint",
+          "prettier"
+        ]
+      },
+      "testCoverage": {
+        "unit": 0,
+        "integration": 0,
+        "e2e": 0
+      },
+      "gaps": [
+        "缺少 Reports 模块（历史版本查询）",
+        "缺少 Items 模块（条目编辑）",
+        "缺少 Notes 模块（会议待办）",
+        "缺少 Export 模块（Excel 导出）",
+        "缺少单元测试",
+        "缺少集成测试"
+      ]
+    },
+    {
+      "name": "frontend",
+      "path": "frontend/",
+      "language": "TypeScript",
+      "framework": "React",
+      "status": "partial",
+      "completeness": 30,
+      "entryPoints": [
+        "src/main.tsx"
+      ],
+      "keyFiles": {
+        "components": [
+          "src/components/layout/MainLayout.tsx"
+        ],
+        "services": [
+          "src/services/generate-api.ts",
+          "src/services/http-client.ts"
+        ],
+        "stores": [
+          "src/store/uiStore.ts"
+        ],
+        "hooks": [
+          "src/hooks/use-generate.ts"
+        ],
+        "types": [
+          "src/types/api.ts",
+          "src/types/report.ts"
+        ],
+        "lib": [
+          "src/lib/axios.ts",
+          "src/lib/queryClient.ts"
+        ]
+      },
+      "dependencies": {
+        "runtime": [
+          "react",
+          "react-dom",
+          "react-router-dom",
+          "antd",
+          "@tanstack/react-query",
+          "zustand",
+          "axios",
+          "dayjs",
+          "immer",
+          "zod"
+        ],
+        "dev": [
+          "vite",
+          "@vitejs/plugin-react",
+          "typescript",
+          "eslint"
+        ]
+      },
+      "testCoverage": {
+        "unit": 0,
+        "component": 0,
+        "e2e": 0
+      },
+      "gaps": [
+        "缺少版本选择器组件",
+        "缺少指标看板组件",
+        "缺少 Tab 编辑器组件",
+        "缺少会议待办侧边栏",
+        "缺少周报详情页",
+        "缺少历史版本列表页",
+        "缺少 Excel 导出功能",
+        "缺少单元测试",
+        "缺少组件测试"
+      ]
+    }
+  ],
+  "database": {
+    "type": "SQLite",
+    "path": "backend/data/weekly-report.sqlite",
+    "walMode": true,
+    "tables": [
+      {
+        "name": "reports",
+        "columns": ["id", "week_range", "week_number", "created_at", "is_deleted"],
+        "indexes": ["idx_reports_is_deleted_created_at"]
+      },
+      {
+        "name": "system_metrics",
+        "columns": ["id", "report_id", "metric_key", "metric_value", "status_code"],
+        "indexes": ["idx_system_metrics_report_id", "uniq_system_metrics_report_key"]
+      },
+      {
+        "name": "report_items",
+        "columns": ["id", "report_id", "tab_type", "source_type", "parent_id", "content_json", "sort_order"],
+        "indexes": ["idx_report_items_report_tab", "idx_report_items_parent", "idx_report_items_sort"]
+      },
+      {
+        "name": "meeting_notes",
+        "columns": ["id", "report_id", "content"],
+        "indexes": ["idx_meeting_notes_report_id"]
+      }
+    ],
+    "migrations": [
+      "1736931600000-InitDatabase"
+    ]
+  },
+  "externalDependencies": {
+    "jira": {
+      "type": "REST API",
+      "baseUrl": "https://your-domain.atlassian.net",
+      "authentication": "Basic Auth",
+      "status": "configured"
+    },
+    "postgresql": {
+      "type": "Database",
+      "databases": ["brv_db", "rev_db"],
+      "status": "configured"
+    }
+  },
+  "apiEndpoints": {
+    "implemented": [
+      {
+        "method": "POST",
+        "path": "/api/generate",
+        "description": "生成新周报",
+        "status": "implemented"
+      },
+      {
+        "method": "GET",
+        "path": "/api/generate/health",
+        "description": "健康检查",
+        "status": "implemented"
+      }
+    ],
+    "planned": [
+      {
+        "method": "GET",
+        "path": "/api/reports",
+        "description": "获取历史周报列表",
+        "status": "planned"
+      },
+      {
+        "method": "GET",
+        "path": "/api/reports/:id",
+        "description": "获取指定周报详情",
+        "status": "planned"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/items/:id",
+        "description": "更新单行条目",
+        "status": "planned"
+      },
+      {
+        "method": "PUT",
+        "path": "/api/reports/:id/manual-items",
+        "description": "全量更新自采数据",
+        "status": "planned"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/notes/:report_id",
+        "description": "更新会议待办",
+        "status": "planned"
+      },
+      {
+        "method": "GET",
+        "path": "/api/reports/:id/export",
+        "description": "导出 Excel",
+        "status": "planned"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/reports/:id",
+        "description": "软删除周报",
+        "status": "planned"
+      }
+    ]
+  },
+  "nextSteps": {
+    "highPriority": [
+      "实现 Reports 模块（后端）",
+      "实现 Items 模块（后端）",
+      "实现版本选择器组件（前端）",
+      "实现指标看板组件（前端）",
+      "实现 Tab 编辑器组件（前端）"
+    ],
+    "mediumPriority": [
+      "实现 Excel 导出功能",
+      "添加单元测试（后端）",
+      "添加组件测试（前端）",
+      "完善错误处理"
+    ],
+    "lowPriority": [
+      "添加集成测试",
+      "性能优化",
+      "Docker 容器化",
+      "CI/CD 流水线"
+    ]
+  },
+  "technicalDebt": [
+    "缺少单元测试覆盖",
+    "缺少集成测试",
+    "缺少 API 文档（Swagger）",
+    "缺少用户认证与授权",
+    "缺少日志聚合与监控",
+    "缺少错误追踪（Sentry）"
+  ],
+  "recommendations": [
+    "优先完成后端 Reports 模块，支持历史版本查询",
+    "优先完成前端核心编辑器组件，实现基本编辑功能",
+    "添加 Swagger 文档，便于前后端协作",
+    "添加单元测试，确保核心逻辑正确性",
+    "配置 CI/CD，自动化测试与部署"
+  ]
+}

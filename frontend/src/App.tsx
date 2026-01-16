@@ -1,5 +1,7 @@
 import {Navigate, Route, Routes} from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
+import ReportPage from './features/report/ReportPage';
+import LatestReportResolver from './features/report/LatestReportResolver';
 
 /**
  * 应用主组件
@@ -13,10 +15,10 @@ function App() {
                 <Route index element={<Navigate to="/latest" replace/>}/>
 
                 {/* 周报详情页 */}
-                <Route path="/reports/:reportId" element={<div>Report Page (TODO)</div>}/>
+                <Route path="/reports/:reportId" element={<ReportPage/>}/>
 
                 {/* 最新周报（自动解析） */}
-                <Route path="/latest" element={<div>Latest Report Resolver (TODO)</div>}/>
+                <Route path="/latest" element={<LatestReportResolver/>}/>
 
                 {/* 404 */}
                 <Route path="*" element={<div>404 Not Found</div>}/>
