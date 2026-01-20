@@ -126,3 +126,64 @@ export interface NotesResponse {
   reportId: string;
   content: string;
 }
+
+/**
+ * 手动条目 DTO
+ * 用于批量更新自采数据(SELF 标签页)
+ */
+export interface ManualItemDto {
+    /**
+     * 条目 ID
+     * 可选字段，如果是 temp_ 开头则是临时 ID，需要生成真实 ID
+     */
+    id?: string;
+
+    /**
+     * 父节点 ID
+     * 如果为 null 或 undefined 则是根节点
+     * 如果是 temp_ 开头则是临时 ID，需要映射为真实 ID
+     */
+    parentId?: string | null;
+
+    /**
+     * 业务数据 JSON
+     */
+    contentJson: Record<string, any>;
+
+    /**
+     * 排序权重
+     * 同级节点按此字段升序排列
+     */
+    sortOrder: number;
+}
+
+/**
+ * 批量更新手动条目请求
+ */
+export interface UpdateManualItemsRequest {
+    /**
+     * 手动条目数组
+     * 支持树形结构(通过 parentId 关联)
+     */
+    items: ManualItemDto[];
+}
+
+/**
+ * 批量更新手动条目响应
+ */
+export interface UpdateManualItemsResponse {
+    /**
+     * 周报 ID
+     */
+    reportId: string;
+
+    /**
+     * 更新成功的条目数量
+     */
+    count: number;
+
+    /**
+     * ID 映射表(临时 ID -> 真实 ID)
+     */
+    idMapping: Record<string, string>;
+}

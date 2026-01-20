@@ -1,16 +1,22 @@
 import {
   Controller,
   Patch,
+    Put,
   Param,
   Body,
   Logger,
 } from '@nestjs/common';
 import { ItemsService } from './items.service';
-import { UpdateItemDto, ItemResponseDto } from './dto/items.dto';
+import {
+    UpdateItemDto,
+    ItemResponseDto,
+    UpdateManualItemsDto,
+    UpdateManualItemsResponseDto,
+} from './dto/items.dto';
 
 /**
  * 条目管理 Controller
- * 提供单行条目编辑功能
+ * 提供单行条目编辑和批量更新自采数据功能
  */
 @Controller('items')
 export class ItemsController {
@@ -42,4 +48,39 @@ export class ItemsController {
       throw error;
     }
   }
+
+    /**
+     * PUT /api/reports/:reportId/manual-items
+     * 批量更新手动条目(SELF 标签页)
+     *
+     * 功能说明:
+     * - 全量替换指定周报的 SELF 标签页数据
+     * - 支持树形结构(通过 parentId 关联)
+     * - 自动处理临时 ID 映射(temp_ 开头的 ID 会被替换为真实 Snowflake ID)
+     * - 使用事务保证数据一致性
+     *
+     * @param reportId 周报 ID
+     * @param dto 批量更新数据
+     * @returns 更新结果(包含 ID 映射表)
+     */
+    @Put('reports/:reportId/manual-items')
+    async updateManualItems(
+        @Param('reportId') reportId: string,
+        @Body() dto: UpdateManualItemsDto,
+    ): Promise<UpdateManualItemsResponseDto> {
+        this.logger.log(
+            `收到批量更新手动条目请求 - 周报 ID: ${reportId}, 条目数量: ${dto.items.length}`,
+        );
+
+        try {
+            const result = await this.itemsService.updateManualItems(reportId, dto);
+            this.logger.log(
+                `批量更新手动条目成功 - 周报 ID: ${reportId}, 成功插入 ${result.count} 条`,
+            );
+            return result;
+        } catch (error) {
+            this.logger.error(`批量更新手动条目失败: ${error.message}`, error.stack);
+            throw error;
+        }
+    }
 }

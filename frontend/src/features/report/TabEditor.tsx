@@ -6,6 +6,7 @@ import type { ReportItemDto } from '@/types/api';
 
 interface TabEditorProps {
   items: ReportItemDto[];
+    reportId?: string;
   onUpdate?: () => void;
 }
 

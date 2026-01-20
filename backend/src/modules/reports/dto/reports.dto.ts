@@ -1,4 +1,4 @@
-import { IsOptional, IsInt, Min, Max } from 'class-validator';
+import {IsOptional, IsInt, Min, Max, IsArray, IsString, IsObject, ValidateNested} from 'class-validator';
 import { Type } from 'class-transformer';
 
 /**
@@ -64,3 +64,33 @@ export class ReportDetailResponseDto {
   }>;
   notes: string;
 }
+
+/**
+ * 手动条目 DTO（用于批量更新）
+ */
+export class ManualItemDto {
+    @IsOptional()
+    @IsString()
+    id?: string; // 临时 ID（前端生成）或真实 ID
+
+    @IsOptional()
+    @IsString()
+    parentId?: string | null; // 父节点 ID
+
+    @IsObject()
+    contentJson: Record<string, any>; // 业务数据
+
+    @IsInt()
+    sortOrder: number; // 排序权重
+}
+
+/**
+ * 更新自采数据请求 DTO
+ */
+export class UpdateManualItemsDto {
+    @IsArray()
+    @ValidateNested({each: true})
+    @Type(() => ManualItemDto)
+    items: ManualItemDto[];
+}
+
