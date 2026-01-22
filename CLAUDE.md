@@ -357,13 +357,9 @@ report_items (1) ----< (N) report_items (自关联，树形结构)
 ## 参考文档
 
 - [需求规格说明书](./数据周报自动化系统%20-%20需求规格说明书.md)
-- [项目规划](./.claude/plan/数据周报自动化系统.md)
 - [NestJS 官方文档](https://docs.nestjs.com/)
 - [React 官方文档](https://react.dev/)
 - [Ant Design 组件库](https://ant.design/)
 - [TypeORM 文档](https://typeorm.io/)
 
 ---
-
-**文档生成时间**: 2026-01-16
-**覆盖率**: 约 85%（核心模块已扫描，部分细节待补充）
