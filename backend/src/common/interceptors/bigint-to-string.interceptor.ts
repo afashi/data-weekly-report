@@ -1,4 +1,4 @@
-import {CallHandler, ExecutionContext, Injectable, NestInterceptor} from '@nestjs/common';
+import {CallHandler, ExecutionContext, Injectable, NestInterceptor, StreamableFile} from '@nestjs/common';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {instanceToPlain} from 'class-transformer';
@@ -16,6 +16,11 @@ export class BigIntToStringInterceptor implements NestInterceptor {
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
         return next.handle().pipe(
             map((data) => {
+                // 跳过 StreamableFile 类型（文件流不需要序列化）
+                if (data instanceof StreamableFile) {
+                    return data;
+                }
+
                 // 使用 class-transformer 自动触发 @Transform 装饰器
                 return instanceToPlain(data, {
                     exposeUnsetFields: false,

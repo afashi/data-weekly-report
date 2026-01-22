@@ -13,7 +13,7 @@ import {ReportEntity} from './report.entity';
 export class SystemMetricEntity extends BaseIdEntity {
     @Column({name: 'report_id', type: 'bigint', comment: '关联报告 ID'})
     @Transform(({value}) => (value == null ? value : value.toString()), {toPlainOnly: true})
-    reportId: string;
+    reportId: number;
 
     @ManyToOne(() => ReportEntity, {onDelete: 'CASCADE'})
     @JoinColumn({name: 'report_id'})

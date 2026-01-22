@@ -1,13 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ReportEntity } from '../../entities/report.entity';
-import { SystemMetricEntity } from '../../entities/system-metric.entity';
-import { ReportItemEntity } from '../../entities/report-item.entity';
-import { MeetingNoteEntity } from '../../entities/meeting-note.entity';
+import {Injectable, Logger, NotFoundException} from '@nestjs/common';
+import {InjectRepository} from '@nestjs/typeorm';
+import {Repository} from 'typeorm';
+import {ReportEntity} from '../../entities/report.entity';
+import {SystemMetricEntity} from '../../entities/system-metric.entity';
+import {ReportItemEntity} from '../../entities/report-item.entity';
+import {MeetingNoteEntity} from '../../entities/meeting-note.entity';
 import * as ExcelJS from 'exceljs';
-import * as path from 'path';
-import * as fs from 'fs';
 
 /**
  * Excel 导出服务
@@ -174,6 +172,9 @@ export class ExportService {
       pattern: 'solid',
       fgColor: { argb: 'FFE7E6E6' },
     };
+
+      // 添加边框
+      this.addBorders(sheet);
   }
 
   /**
@@ -196,21 +197,30 @@ export class ExportService {
     const rootItems = items.filter((item) => !item.parentId);
     rootItems.forEach((rootItem) => {
       const rootContent = JSON.parse(rootItem.contentJson);
-      sheet.addRow({
+        const rootRow = sheet.addRow({
         title: rootContent.title || '',
         assignee: rootContent.assignee || '',
         workDays: rootContent.workDays || '',
       });
 
+        // 设置根节点样式（加粗）
+        rootRow.font = {bold: true};
+
       // 添加子任务（缩进）
-      const children = items.filter((item) => item.parentId === rootItem.id);
+        // 注意：需要将 BIGINT 转换为字符串进行比较
+        const children = items.filter(
+            (item) => item.parentId && item.parentId.toString() === rootItem.id.toString()
+        );
       children.forEach((child) => {
         const childContent = JSON.parse(child.contentJson);
-        sheet.addRow({
+          const childRow = sheet.addRow({
           title: `  └─ ${childContent.title || ''}`,
           assignee: childContent.assignee || '',
           workDays: childContent.workDays || '',
         });
+
+          // 设置子节点样式（灰色字体）
+          childRow.font = {color: {argb: 'FF666666'}};
       });
     });
 
@@ -221,6 +231,9 @@ export class ExportService {
       pattern: 'solid',
       fgColor: { argb: 'FFE7E6E6' },
     };
+
+      // 添加边框
+      this.addBorders(sheet);
   }
 
   /**
@@ -260,6 +273,9 @@ export class ExportService {
       pattern: 'solid',
       fgColor: { argb: 'FFE7E6E6' },
     };
+
+      // 添加边框
+      this.addBorders(sheet);
   }
 
   /**
@@ -298,4 +314,38 @@ export class ExportService {
     };
     return labels[key] || key;
   }
+
+    /**
+     * 为工作表添加边框
+     * @param sheet 工作表
+     */
+    private addBorders(sheet: ExcelJS.Worksheet) {
+        // 获取数据范围
+        const rowCount = sheet.rowCount;
+        const colCount = sheet.columnCount;
+
+        if (rowCount === 0 || colCount === 0) {
+            return;
+        }
+
+        // 为所有单元格添加边框
+        for (let row = 1; row <= rowCount; row++) {
+            for (let col = 1; col <= colCount; col++) {
+                const cell = sheet.getRow(row).getCell(col);
+                cell.border = {
+                    top: {style: 'thin', color: {argb: 'FFD0D0D0'}},
+                    left: {style: 'thin', color: {argb: 'FFD0D0D0'}},
+                    bottom: {style: 'thin', color: {argb: 'FFD0D0D0'}},
+                    right: {style: 'thin', color: {argb: 'FFD0D0D0'}},
+                };
+
+                // 设置单元格对齐方式
+                cell.alignment = {
+                    vertical: 'middle',
+                    horizontal: 'left',
+                    wrapText: true,
+                };
+            }
+        }
+    }
 }

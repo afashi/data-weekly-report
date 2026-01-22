@@ -1,15 +1,9 @@
-import {Injectable, Logger, NotFoundException, BadRequestException} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import {Repository, DataSource} from 'typeorm';
-import { ReportItemEntity } from '../../entities/report-item.entity';
+import {BadRequestException, Injectable, Logger, NotFoundException} from '@nestjs/common';
+import {InjectRepository} from '@nestjs/typeorm';
+import {DataSource, Repository} from 'typeorm';
+import {ReportItemEntity} from '../../entities/report-item.entity';
 import {ReportEntity} from '../../entities/report.entity';
-import {
-    UpdateItemDto,
-    ItemResponseDto,
-    UpdateManualItemsDto,
-    UpdateManualItemsResponseDto,
-    ManualItemDto
-} from './dto/items.dto';
+import {ItemResponseDto, UpdateItemDto, UpdateManualItemsDto, UpdateManualItemsResponseDto} from './dto/items.dto';
 import {IdService} from '../id/id.service';
 
 /**
@@ -150,11 +144,11 @@ export class ItemsService {
 
                 // 创建实体
                 const entity = new ReportItemEntity();
-                entity.id = BigInt(realId);
-                entity.reportId = BigInt(reportId);
+                entity.id = realId; // TypeORM 会自动处理字符串到 BIGINT 的转换
+                entity.reportId = reportId;
                 entity.tabType = 'SELF';
                 entity.sourceType = 'MANUAL';
-                entity.parentId = realParentId;
+                entity.parentId = realParentId ? realParentId.toString() : null;
                 entity.contentJson = JSON.stringify(item.contentJson);
                 entity.sortOrder = item.sortOrder;
 
