@@ -1,6 +1,7 @@
-import { Card, Row, Col, Statistic, Progress } from 'antd';
-import { CheckCircleOutlined, SyncOutlined, FileTextOutlined } from '@ant-design/icons';
-import type { MetricDto } from '@/types/api';
+import {Card, Col, Row, Statistic} from 'antd';
+import {CheckCircleOutlined, FileTextOutlined, SyncOutlined} from '@ant-design/icons';
+import type {MetricDto} from '@/types/api';
+import StackedProgress from '@/components/business/StackedProgress';
 
 interface MetricDashboardProps {
   metrics: MetricDto[];
@@ -31,14 +32,10 @@ export default function MetricDashboard({ metrics }: MetricDashboardProps) {
   const verifyEtl = getMetricValue('VERIFY_ETL');
   const reviewEtl = getMetricValue('REVIEW_ETL');
 
-  // 计算业务量百分比
-  const processPercent = totalCount > 0 ? Math.round((processCount / totalCount) * 100) : 0;
-  const manualPercent = totalCount > 0 ? Math.round((manualCount / totalCount) * 100) : 0;
-
   return (
     <Row gutter={[16, 16]}>
       {/* 业务量卡片 */}
-      <Col xs={24} sm={24} md={8}>
+        <Col xs={24} sm={24} md={12}>
         <Card
           title={
             <span>
@@ -56,34 +53,22 @@ export default function MetricDashboard({ metrics }: MetricDashboardProps) {
             valueStyle={{ color: '#1677ff', fontSize: 32, fontWeight: 600 }}
           />
           <div style={{ marginTop: 24 }}>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ color: '#666' }}>流程数据</span>
-                <span style={{ fontWeight: 600 }}>{processCount} 条</span>
-              </div>
-              <Progress
-                percent={processPercent}
-                strokeColor="#52c41a"
-                showInfo={false}
+              <StackedProgress
+                  total={totalCount}
+                  items={[
+                      {label: '流程数据', value: processCount, color: '#52c41a'},
+                      {label: '自采数据', value: manualCount, color: '#1677ff'}
+                  ]}
+                  height={24}
+                  showPercent={true}
+                  showLegend={true}
               />
-            </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ color: '#666' }}>自采数据</span>
-                <span style={{ fontWeight: 600 }}>{manualCount} 条</span>
-              </div>
-              <Progress
-                percent={manualPercent}
-                strokeColor="#1677ff"
-                showInfo={false}
-              />
-            </div>
           </div>
         </Card>
       </Col>
 
       {/* 验证环境 ETL 卡片 */}
-      <Col xs={24} sm={12} md={8}>
+        <Col xs={24} sm={12} md={6}>
         <Card
           title={
             <span>
@@ -116,7 +101,7 @@ export default function MetricDashboard({ metrics }: MetricDashboardProps) {
       </Col>
 
       {/* 复盘环境 ETL 卡片 */}
-      <Col xs={24} sm={12} md={8}>
+        <Col xs={24} sm={12} md={6}>
         <Card
           title={
             <span>

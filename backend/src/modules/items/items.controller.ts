@@ -1,15 +1,9 @@
+import {Body, Controller, Logger, Param, Patch, Post, Put,} from '@nestjs/common';
+import {ItemsService} from './items.service';
 import {
-  Controller,
-  Patch,
-    Put,
-  Param,
-  Body,
-  Logger,
-} from '@nestjs/common';
-import { ItemsService } from './items.service';
-import {
-    UpdateItemDto,
+    CreateItemDto,
     ItemResponseDto,
+    UpdateItemDto,
     UpdateManualItemsDto,
     UpdateManualItemsResponseDto,
 } from './dto/items.dto';
@@ -23,6 +17,27 @@ export class ItemsController {
   private readonly logger = new Logger(ItemsController.name);
 
   constructor(private readonly itemsService: ItemsService) {}
+
+    /**
+     * POST /api/items
+     * 新增条目
+     *
+     * @param dto 新增数据
+     * @returns 新增的条目
+     */
+    @Post()
+    async createItem(@Body() dto: CreateItemDto): Promise<ItemResponseDto> {
+        this.logger.log(`收到新增条目请求 - 周报 ID: ${dto.reportId}, Tab: ${dto.tabType}`);
+
+        try {
+            const result = await this.itemsService.createItem(dto);
+            this.logger.log(`条目新增成功 - ID: ${result.id}`);
+            return result;
+        } catch (error) {
+            this.logger.error(`条目新增失败: ${error.message}`, error.stack);
+            throw error;
+        }
+    }
 
   /**
    * PATCH /api/items/:id

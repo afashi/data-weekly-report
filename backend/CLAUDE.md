@@ -1,416 +1,404 @@
-[根目录](../CLAUDE.md) > **backend**
+# Backend 模块 - AI 上下文文档
+
+> **最后更新**: 2026-01-23
+> **模块状态**: 🟡 开发中（约 70% 完成）
+> **技术栈**: NestJS 10 + TypeORM 0.3 + SQLite + PostgreSQL
 
 ---
 
-# Backend 模块文档
+## 📋 模块概述
 
-> **模块路径**: `backend/`
-> **职责**: 后端服务 - 周报生成、数据聚合、API 提供
-> **技术栈**: NestJS 10.x + TypeORM 0.3.x + SQLite + PostgreSQL
-> **状态**: 🟡 70% 完成
+Backend 模块是数据周报自动化系统的后端服务，负责周报生成、数据聚合、API 提供等核心业务逻辑。
 
----
+**核心职责**：
 
-## 变更记录 (Changelog)
-
-### 2026-01-16
-- 初始化模块文档
-- 完成基础架构搭建（ConfigModule、IdModule、GenerateModule）
-- 完成数据库 Migration（4 张表）
-- 完成 Jira 和 SQL 适配器
+- 🔄 **周报生成**：整合 Jira、PostgreSQL 数据源，生成周报快照
+- 📊 **数据聚合**：并发拉取多源数据，统一转换与存储
+- 🔌 **API 服务**：提供 RESTful API 供前端调用
+- 🗄️ **数据持久化**：基于 SQLite 的本地数据存储
+- 🆔 **ID 生成**：基于 Snowflake 算法的分布式 ID 生成
 
 ---
 
-## 模块职责
+## 🏗️ 模块结构
 
-Backend 模块是数据周报自动化系统的核心服务层，负责：
-
-1. **数据聚合**：从 Jira 和 PostgreSQL 拉取数据并标准化
-2. **周报生成**：计算周期、整合数据、事务写入数据库
-3. **API 提供**：为前端提供 RESTful API
-4. **ID 生成**：基于 Snowflake 算法生成全局唯一 ID
-5. **配置管理**：外部 YAML 配置文件加载与校验
-
----
-
-## 入口与启动
-
-### 主入口文件
-- **文件**: `src/main.ts`
-- **端口**: 3000（可通过配置文件修改）
-- **全局配置**:
-  - 验证管道（ValidationPipe）：自动校验请求参数
-  - BIGINT 序列化拦截器：ID 自动转为 String
-  - CORS：允许前端跨域请求
-  - 全局路由前缀：`/api`
-
-### 启动命令
-```bash
-# 开发模式（热重载）
-npm run start:dev
-
-# 生产模式
-npm run build
-npm run start:prod
-
-# 调试模式
-npm run start:debug
+```
+backend/
+├── src/
+│   ├── main.ts                          # 应用入口
+│   ├── app.module.ts                    # 根模块
+│   ├── common/                          # 公共模块
+│   │   ├── entities/
+│   │   │   └── base-id.entity.ts        # 基础 ID 实体
+│   │   ├── interceptors/
+│   │   │   └── bigint-to-string.interceptor.ts  # BIGINT 序列化拦截器
+│   │   └── utils/
+│   │       └── snowflake.ts             # Snowflake ID 工具
+│   ├── config/                          # 配置管理
+│   │   ├── config.loader.ts             # 配置加载器
+│   │   ├── config.module.ts             # 配置模块
+│   │   ├── config.schema.ts             # 配置 Schema（Zod）
+│   │   ├── config.types.ts              # 配置类型定义
+│   │   └── typeorm.config.ts            # TypeORM 配置
+│   ├── entities/                        # 数据模型
+│   │   ├── report.entity.ts             # 报告主表
+│   │   ├── system-metric.entity.ts      # 系统指标表
+│   │   ├── report-item.entity.ts        # 报表条目表
+│   │   └── meeting-note.entity.ts       # 会议待办表
+│   ├── migrations/                      # 数据库迁移
+│   │   └── 1736931600000-InitDatabase.ts
+│   └── modules/                         # 业务模块
+│       ├── generate/                    # 周报生成模块
+│       │   ├── adapters/
+│       │   │   ├── jira.adapter.ts      # Jira 数据适配器
+│       │   │   └── sql.adapter.ts       # SQL 数据适配器
+│       │   ├── dto/
+│       │   │   └── generate.dto.ts      # 生成 DTO
+│       │   ├── types/
+│       │   │   ├── jira.types.ts        # Jira 类型定义
+│       │   │   └── sql.types.ts         # SQL 类型定义
+│       │   ├── generate.controller.ts   # 生成控制器
+│       │   ├── generate.module.ts       # 生成模块
+│       │   └── generate.service.ts      # 生成服务
+│       ├── reports/                     # 历史查询模块
+│       │   ├── dto/
+│       │   │   └── reports.dto.ts
+│       │   ├── reports.controller.ts
+│       │   ├── reports.module.ts
+│       │   └── reports.service.ts
+│       ├── items/                       # 条目编辑模块
+│       │   ├── dto/
+│       │   │   └── items.dto.ts
+│       │   ├── items.controller.ts
+│       │   ├── items.module.ts
+│       │   └── items.service.ts
+│       ├── notes/                       # 会议待办模块
+│       │   ├── dto/
+│       │   │   └── notes.dto.ts
+│       │   ├── notes.controller.ts
+│       │   ├── notes.module.ts
+│       │   └── notes.service.ts
+│       ├── export/                      # Excel 导出模块
+│       │   ├── export.controller.ts
+│       │   ├── export.module.ts
+│       │   └── export.service.ts
+│       └── id/                          # ID 生成模块
+│           ├── id.module.ts
+│           └── id.service.ts
+├── config/
+│   └── app.yaml.example                 # 配置文件示例
+├── data/                                # 数据目录
+│   └── weekly-report.sqlite             # SQLite 数据库
+├── ormconfig.ts                         # TypeORM CLI 配置
+├── run-migrations.js                    # Migration 运行脚本
+├── package.json
+├── tsconfig.json
+└── nest-cli.json
 ```
 
-### 健康检查
-访问 `http://localhost:3000/api/generate/health` 验证所有依赖服务状态。
-
 ---
 
-## 对外接口
+## 📦 核心模块详解
 
-### 1. 生成周报
-- **端点**: `POST /api/generate`
-- **请求体**:
-  ```json
-  {
-    "weekRange": "2026/01/12-2026/01/18",  // 可选
-    "weekNumber": 3                         // 可选
-  }
-  ```
-- **响应**:
-  ```json
-  {
-    "id": "1234567890123456789",
-    "weekRange": "2026/01/12-2026/01/18",
-    "weekNumber": 3,
-    "createdAt": "2026-01-16T10:30:00.000Z",
-    "metrics": [...],
-    "items": [...],
-    "notes": ""
-  }
-  ```
-- **说明**: 如果不传参数，自动计算当前周的周期
+### 1. Generate 模块（周报生成）
 
-### 2. 健康检查
-- **端点**: `GET /api/generate/health`
-- **响应**:
-  ```json
-  {
-    "status": "ok",
-    "timestamp": "2026-01-16T10:30:00.000Z",
-    "services": {
-      "jira": true,
-      "sql": {
-        "brv_db": true,
-        "rev_db": true
-      },
-      "database": true
-    }
-  }
-  ```
+**路径**: `src/modules/generate/`
 
-### 待实现接口
+**职责**：
+
+- 计算周期范围（周一至周日）
+- 并发拉取 Jira 任务与 PostgreSQL 指标
+- 数据转换与标准化
+- 事务性写入 4 张表（reports、system_metrics、report_items、meeting_notes）
+
+**关键文件**：
+
+- `generate.service.ts:43-200` - 核心生成逻辑
+- `adapters/jira.adapter.ts` - Jira API 调用与数据映射
+- `adapters/sql.adapter.ts` - PostgreSQL 查询与指标提取
+
+**API 端点**：
+
+- `POST /api/generate` - 生成新周报
+- `GET /api/generate/health` - 健康检查
+
+**数据流**：
+
+```
+GenerateService.generateReport()
+  ├─> 计算周期 (calculateWeekRange, calculateWeekNumber)
+  ├─> 并发拉取数据
+  │   ├─> JiraAdapter.fetchDoneTasks()
+  │   ├─> JiraAdapter.fetchPlanTasks()
+  │   ├─> SqlAdapter.fetchBrvMetrics()
+  │   └─> SqlAdapter.fetchRevMetrics()
+  ├─> 数据转换与映射
+  └─> 事务写入数据库
+      ├─> ReportEntity (主表)
+      ├─> SystemMetricEntity[] (指标)
+      ├─> ReportItemEntity[] (条目)
+      └─> MeetingNoteEntity (待办)
+```
+
+### 2. Reports 模块（历史查询）
+
+**路径**: `src/modules/reports/`
+
+**职责**：
+
+- 查询历史周报列表
+- 获取指定周报详情
+- 软删除周报
+
+**API 端点**：
 - `GET /api/reports` - 获取历史周报列表
 - `GET /api/reports/:id` - 获取指定周报详情
+- `DELETE /api/reports/:id` - 软删除周报
+
+### 3. Items 模块（条目编辑）
+
+**路径**: `src/modules/items/`
+
+**职责**：
+
+- 更新单行条目内容
+- 批量更新自采数据（树形结构）
+- 新增/删除条目
+
+**API 端点**：
 - `PATCH /api/items/:id` - 更新单行条目
 - `PUT /api/reports/:id/manual-items` - 全量更新自采数据
+
+### 4. Notes 模块（会议待办）
+
+**路径**: `src/modules/notes/`
+
+**职责**：
+
+- 更新会议待办内容
+- 关联周报 ID
+
+**API 端点**：
 - `PATCH /api/notes/:report_id` - 更新会议待办
+
+### 5. Export 模块（Excel 导出）
+
+**路径**: `src/modules/export/`
+
+**职责**：
+
+- 基于周报数据生成 Excel 文件
+- 4 个 Sheet 页（本周完成、自采数据、后续计划、维度说明）
+- 树形数据格式化（缩进 + 样式）
+
+**API 端点**：
 - `GET /api/reports/:id/export` - 导出 Excel
-- `DELETE /api/reports/:id` - 软删除周报
+
+**状态**: ⚠️ 未完成
+
+### 6. ID 模块（ID 生成）
+
+**路径**: `src/modules/id/`
+
+**职责**：
+
+- 基于 Snowflake 算法生成 64 位分布式 ID
+- 全局单例服务
+- 确保 ID 唯一性与有序性
+
+**关键方法**：
+
+- `IdService.nextId()` - 生成新 ID（返回 String）
 
 ---
 
-## 关键依赖与配置
+## 🗄️ 数据模型
 
-### 核心依赖
-```json
-{
-  "@nestjs/common": "^10.3.0",
-  "@nestjs/typeorm": "^10.0.1",
-  "typeorm": "^0.3.1",
-  "axios": "^1.6.5",
-  "pg": "^8.11.3",
-  "sqlite3": "^5.1.7",
-  "nodejs-snowflake": "^2.0.1",
-  "exceljs": "^4.4.0",
-  "date-fns": "^3.2.0",
-  "zod": "^3.22.4"
-}
-```
+### 1. ReportEntity（报告主表）
+
+**文件**: `src/entities/report.entity.ts`
+
+**字段**：
+
+- `id` (BIGINT) - 主键，Snowflake ID
+- `weekRange` (VARCHAR) - 周周期描述，如 "2026/01/12-2026/01/18"
+- `weekNumber` (INT) - 年度周数，如第 3 周
+- `createdAt` (DATETIME) - 生成时间
+- `isDeleted` (BOOLEAN) - 软删除标记
+
+**索引**：
+
+- `idx_reports_is_deleted_created_at` - 软删除 + 时间排序
+
+### 2. SystemMetricEntity（系统指标表）
+
+**文件**: `src/entities/system-metric.entity.ts`
+
+**字段**：
+
+- `id` (BIGINT) - 主键
+- `reportId` (BIGINT) - 关联报告 ID
+- `metricKey` (VARCHAR) - 指标标识（TOTAL_COUNT、PROCESS_COUNT、MANUAL_COUNT、BRV_ETL、REV_ETL）
+- `metricValue` (VARCHAR) - 显示值（数值或时间字符串）
+- `statusCode` (VARCHAR) - 状态标识（loading、success、normal）
+
+**索引**：
+
+- `idx_system_metrics_report_id` - 报告 ID 索引
+- `uniq_system_metrics_report_key` - 唯一约束（reportId + metricKey）
+
+### 3. ReportItemEntity（报表条目表）
+
+**文件**: `src/entities/report-item.entity.ts`
+
+**字段**：
+
+- `id` (BIGINT) - 主键
+- `reportId` (BIGINT) - 关联报告 ID
+- `tabType` (VARCHAR) - 标签类型（DONE、SELF、PLAN）
+- `sourceType` (VARCHAR) - 数据来源（JIRA、SQL、MANUAL）
+- `parentId` (BIGINT) - 父节点 ID（用于树形结构，根节点为 NULL）
+- `contentJson` (TEXT) - 业务数据 JSON
+- `sortOrder` (INT) - 排序权重
+
+**索引**：
+
+- `idx_report_items_report_tab` - 报告 ID + Tab 类型
+- `idx_report_items_parent` - 父节点 ID
+- `idx_report_items_sort` - 排序权重
+
+### 4. MeetingNoteEntity（会议待办表）
+
+**文件**: `src/entities/meeting-note.entity.ts`
+
+**字段**：
+
+- `id` (BIGINT) - 主键
+- `reportId` (BIGINT) - 关联报告 ID
+- `content` (TEXT) - 纯文本内容
+
+**索引**：
+
+- `idx_meeting_notes_report_id` - 报告 ID 索引
+
+---
+
+## ⚙️ 配置管理
 
 ### 配置文件结构
-**文件**: `config/app.yaml`（需从 `app.yaml.example` 复制）
+
+**文件**: `config/app.yaml`
 
 ```yaml
 server:
   port: 3000
-  corsOrigin: "http://localhost:5173"
+  corsOrigin: http://localhost:5173
 
 database:
-  path: "data/weekly-report.sqlite"
-
-id:
-  workerId: 1
-  datacenterId: 1
+  path: ./data/weekly-report.sqlite
 
 jira:
-  baseUrl: "https://your-domain.atlassian.net"
-  email: "your-email@example.com"
-  apiToken: "YOUR_JIRA_API_TOKEN"
-  jql:
-    done: "project = DATADEV AND status = Done AND updated >= startOfWeek()"
-    plan: "project = DATADEV AND status in (Open, \"In Progress\")"
-  fields:
-    - "summary"
-    - "status"
-    - "assignee"
-    - "customfield_10016"
+  baseUrl: https://your-jira-instance.atlassian.net
+  email: your-email@example.com
+  apiToken: your-api-token
+  projectKey: YOUR_PROJECT
 
-externalDatabases:
-  - name: "brv_db"
-    type: "postgres"
-    host: "192.168.0.51"
-    port: 5432
-    database: "tjfj"
-    username: "readonly_user"
-    password: "YOUR_PASSWORD"
-    connectTimeoutMs: 5000
-    queryTimeoutMs: 15000
-    ssl: false
-
-sqlQueries:
-  metrics_brv: "SELECT 'TOTAL_COUNT' as metric_key, COUNT(*) as metric_value, 'success' as status FROM tasks"
-  etl_status_rev: "SELECT 'REVIEW_ETL' as metric_key, MAX(load_time) as metric_value, 'success' as status FROM etl_logs"
-
-excel:
-  templatePath: "数据周报_模板.xlsx"
-  indentSize: 2
-
-ui:
-  theme: "light"
-  primaryColor: "#1677ff"
+postgresql:
+  host: localhost
+  port: 5432
+  username: postgres
+  password: your-password
+  database: your-database
 ```
 
-### 配置校验
-使用 Zod 进行严格的配置校验（`src/config/config.schema.ts`），启动时自动验证配置文件格式。
+### 配置加载流程
+
+1. `config.loader.ts` - 读取 YAML 文件
+2. `config.schema.ts` - Zod Schema 验证
+3. `config.types.ts` - TypeScript 类型定义
+4. `config.module.ts` - 注册为全局模块
 
 ---
 
-## 数据模型
+## 🔧 开发指南
 
-### Entity 列表
+### 添加新的 API 端点
 
-| Entity | 文件 | 说明 |
-|--------|------|------|
-| ReportEntity | `entities/report.entity.ts` | 报告主表 |
-| SystemMetricEntity | `entities/system-metric.entity.ts` | 系统指标表 |
-| ReportItemEntity | `entities/report-item.entity.ts` | 报表条目表 |
-| MeetingNoteEntity | `entities/meeting-note.entity.ts` | 会议待办表 |
-
-### 关键字段说明
-
-**ReportEntity**:
-- `id`: BIGINT（Snowflake ID）
-- `weekRange`: 周周期描述（如 "2026/01/12-2026/01/18"）
-- `weekNumber`: 年度周数（1-53）
-- `createdAt`: 生成时间
-- `isDeleted`: 软删除标记
-
-**SystemMetricEntity**:
-- `metricKey`: 指标标识（TOTAL_COUNT, PROCESS_COUNT, MANUAL_COUNT, VERIFY_ETL, REVIEW_ETL）
-- `metricValue`: 显示值（数值或时间字符串）
-- `statusCode`: 状态标识（loading, success, normal）
-
-**ReportItemEntity**:
-- `tabType`: 标签类型（DONE, SELF, PLAN）
-- `sourceType`: 数据来源（JIRA, SQL, MANUAL）
-- `parentId`: 父节点 ID（用于树形结构）
-- `contentJson`: 业务数据 JSON
-- `sortOrder`: 排序权重
-
-**MeetingNoteEntity**:
-- `content`: 纯文本内容
-
-### 关系定义
-- 所有子表通过 `reportId` 关联到 `ReportEntity`
-- 使用 `@ManyToOne` 和 `@JoinColumn` 定义外键关系
-- 级联删除：`onDelete: 'CASCADE'`
-
----
-
-## 测试与质量
-
-### 当前状态
-- ❌ 单元测试：未实施
-- ❌ 集成测试：未实施
-- ✅ 手动测试：基础功能验证
-
-### 测试计划
-
-**单元测试**（优先级：高）:
 ```bash
-# 待添加测试文件
-src/modules/id/id.service.spec.ts
-src/modules/generate/adapters/jira.adapter.spec.ts
-src/modules/generate/adapters/sql.adapter.spec.ts
-src/modules/generate/generate.service.spec.ts
+# 生成控制器
+nest g controller modules/<模块名>
+
+# 生成服务
+nest g service modules/<模块名>
+
+# 生成模块
+nest g module modules/<模块名>
 ```
 
-**集成测试**（优先级：中）:
-- 完整周报生成流程
-- 数据库事务回滚验证
-- 外部 API 调用 Mock
+### 修改数据库结构
 
-### 代码质量工具
-- **ESLint**: 已配置（`.eslintrc.js`）
-- **Prettier**: 已配置（`.prettierrc`）
-- **TypeScript**: 严格模式（`tsconfig.json`）
+```bash
+# 生成 Migration
+npm run migration:generate -- -n <变更描述>
 
----
+# 运行 Migration
+npm run migration:run
 
-## 常见问题 (FAQ)
-
-### Q1: 如何添加新的数据库表？
-**A**:
-1. 在 `src/entities/` 创建新的 Entity 文件
-2. 继承 `BaseIdEntity` 类
-3. 运行 `npm run migration:generate -- -n AddNewTable`
-4. 检查生成的 Migration 文件
-5. 运行 `npm run migration:run`
-
-### Q2: 如何修改 Jira 查询条件？
-**A**: 修改 `config/app.yaml` 中的 `jira.jql.done` 和 `jira.jql.plan` 字段。
-
-### Q3: 如何添加新的外部数据库？
-**A**:
-1. 在 `config/app.yaml` 的 `externalDatabases` 数组中添加新配置
-2. 在 `sqlQueries` 中添加对应的 SQL 查询
-3. 修改 `SqlAdapter` 添加新的查询方法
-
-### Q4: 为什么 ID 要转为 String？
-**A**: JavaScript 的 Number 类型只能安全表示 53 位整数，而 Snowflake ID 是 64 位。为防止精度丢失，在 API 层自动转为 String。
-
-### Q5: 如何调试 SQL 查询？
-**A**:
-1. 修改 `src/config/typeorm.config.ts` 中的 `logging` 选项为 `true`
-2. 重启服务，查看控制台输出的 SQL 语句
-
----
-
-## 相关文件清单
-
-### 核心模块
-```
-src/
-├── main.ts                          # 应用入口
-├── app.module.ts                    # 根模块
-├── common/
-│   ├── entities/
-│   │   └── base-id.entity.ts        # 基础 Entity（ID 序列化）
-│   ├── interceptors/
-│   │   └── bigint-to-string.interceptor.ts  # BIGINT 序列化拦截器
-│   └── utils/
-│       └── snowflake.ts             # Snowflake 工具类（未使用）
-├── config/
-│   ├── config.loader.ts             # 配置加载器
-│   ├── config.module.ts             # 配置模块
-│   ├── config.schema.ts             # Zod 校验 Schema
-│   ├── config.types.ts              # 配置类型定义
-│   └── typeorm.config.ts            # TypeORM 配置
-├── entities/
-│   ├── report.entity.ts             # 报告主表
-│   ├── system-metric.entity.ts      # 系统指标表
-│   ├── report-item.entity.ts        # 报表条目表
-│   └── meeting-note.entity.ts       # 会议待办表
-├── migrations/
-│   └── 1736931600000-InitDatabase.ts  # 初始化数据库
-└── modules/
-    ├── id/
-    │   ├── id.module.ts             # ID 生成模块
-    │   └── id.service.ts            # Snowflake ID 服务
-    └── generate/
-        ├── generate.module.ts       # 周报生成模块
-        ├── generate.controller.ts   # 控制器
-        ├── generate.service.ts      # 核心业务逻辑
-        ├── adapters/
-        │   ├── jira.adapter.ts      # Jira API 适配器
-        │   └── sql.adapter.ts       # PostgreSQL 适配器
-        ├── dto/
-        │   └── generate.dto.ts      # 请求/响应 DTO
-        └── types/
-            ├── jira.types.ts        # Jira 类型定义
-            └── sql.types.ts         # SQL 类型定义
+# 回滚 Migration
+npm run migration:revert
 ```
 
-### 配置文件
-```
-config/
-└── app.yaml.example                 # 配置文件模板
+### 调试技巧
 
-ormconfig.ts                         # TypeORM CLI 配置
-nest-cli.json                        # NestJS CLI 配置
-tsconfig.json                        # TypeScript 配置
-package.json                         # 依赖管理
+**启用 SQL 日志**：
+
+```typescript
+// typeorm.config.ts
+logging: true,  // 启用 SQL 日志
+```
+
+**健康检查**：
+
+```bash
+curl http://localhost:3000/api/generate/health
+```
+
+**查看数据库**：
+
+```bash
+# 使用 SQLite 客户端
+sqlite3 backend/data/weekly-report.sqlite
 ```
 
 ---
 
-## 架构设计亮点
+## 🚨 关键约束
 
-### 1. Snowflake ID 生成
-- 64 位分布式 ID，确保全局唯一
-- 时间有序，便于索引和排序
-- 支持多机房、多实例部署
-
-### 2. 适配器模式
-- `JiraAdapter` 和 `SqlAdapter` 封装外部数据源
-- 统一的数据标准化接口
-- 便于扩展新的数据源
-
-### 3. 事务管理
-- 使用 TypeORM 事务确保数据一致性
-- 单次生成涉及 4 张表的写入，全部成功或全部回滚
-
-### 4. 配置外部化
-- 敏感信息不提交到版本控制
-- 支持多环境配置（开发、测试、生产）
-- Zod 校验确保配置格式正确
-
-### 5. SQLite WAL 模式
-- 读写并发性能更好
-- 写操作不阻塞读操作
-- 数据库崩溃恢复更快
+1. **ID 生成**：所有主键必须通过 `IdService.nextId()` 生成
+2. **BIGINT 序列化**：所有 ID 在 API 层自动转为 String（通过 `BigIntToStringInterceptor`）
+3. **事务管理**：涉及多表写入必须使用 TypeORM 事务
+4. **错误处理**：使用 NestJS 内置异常类（BadRequestException、NotFoundException 等）
+5. **类型安全**：禁止使用 any，必须明确类型定义
 
 ---
 
-## 性能优化建议
+## ⚠️ 已知问题
 
-### 已实施
-- ✅ 并发拉取数据（Promise.all）
-- ✅ 数据库连接池（PostgreSQL）
-- ✅ SQLite WAL 模式
-- ✅ 索引优化（复合索引）
-
-### 待优化
-- [ ] Jira API 分页查询（当前限制 1000 条）
-- [ ] 缓存热点数据（Redis）
-- [ ] 异步任务队列（Bull）
-- [ ] 数据库查询优化（N+1 问题）
+1. **WAL 模式配置**：需验证 SQLite WAL 模式是否生效
+2. **Jira API 连接**：需真实凭证才能测试
+3. **Excel 导出**：ExcelJS 集成未完成
+4. **错误处理**：缺少全局错误过滤器
 
 ---
 
-## 安全措施
+## 📚 参考资料
 
-### 已实施
-- ✅ 配置文件不提交到版本控制（`.gitignore`）
-- ✅ PostgreSQL 使用只读账号
-- ✅ 参数化查询（防止 SQL 注入）
-- ✅ 请求参数校验（ValidationPipe）
-- ✅ 超时控制（连接超时 5 秒，查询超时 15 秒）
-
-### 待加强
-- [ ] API 认证与授权（JWT）
-- [ ] 请求频率限制（Rate Limiting）
-- [ ] 敏感数据加密（数据库密码）
-- [ ] 审计日志（操作记录）
+- [NestJS 官方文档](https://docs.nestjs.com/)
+- [TypeORM 文档](https://typeorm.io/)
+- [Snowflake ID 算法](https://en.wikipedia.org/wiki/Snowflake_ID)
 
 ---
 
-**文档生成时间**: 2026-01-16
-**模块覆盖率**: 约 90%（核心代码已扫描，测试部分待补充）
+**文档生成时间**: 2026-01-23
+**文档版本**: V2.0
+**维护者**: AI Assistant

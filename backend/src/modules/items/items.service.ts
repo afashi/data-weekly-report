@@ -3,7 +3,13 @@ import {InjectRepository} from '@nestjs/typeorm';
 import {DataSource, Repository} from 'typeorm';
 import {ReportItemEntity} from '../../entities/report-item.entity';
 import {ReportEntity} from '../../entities/report.entity';
-import {ItemResponseDto, UpdateItemDto, UpdateManualItemsDto, UpdateManualItemsResponseDto} from './dto/items.dto';
+import {
+    CreateItemDto,
+    ItemResponseDto,
+    UpdateItemDto,
+    UpdateManualItemsDto,
+    UpdateManualItemsResponseDto
+} from './dto/items.dto';
 import {IdService} from '../id/id.service';
 
 /**
@@ -22,6 +28,53 @@ export class ItemsService {
     private readonly idService: IdService,
     private readonly dataSource: DataSource,
   ) {}
+
+    /**
+     * 新增条目
+     * @param dto 新增数据
+     * @returns 新增的条目
+     */
+    async createItem(dto: CreateItemDto): Promise<ItemResponseDto> {
+        this.logger.log(`新增条目 - 周报 ID: ${dto.reportId}, Tab: ${dto.tabType}`);
+
+        // 验证周报是否存在
+        const report = await this.reportRepository.findOne({
+            where: {id: dto.reportId as any, isDeleted: false},
+        });
+
+        if (!report) {
+            throw new NotFoundException(`周报不存在 - ID: ${dto.reportId}`);
+        }
+
+        // 生成新 ID
+        const newId = this.idService.nextId();
+
+        // 创建条目实体
+        const item = new ReportItemEntity();
+        item.id = newId;
+        item.reportId = dto.reportId;
+        item.tabType = dto.tabType;
+        item.sourceType = 'MANUAL';
+        item.parentId = null;
+        item.contentJson = JSON.stringify(dto.contentJson);
+        item.sortOrder = dto.sortOrder;
+
+        // 保存到数据库
+        await this.itemRepository.save(item);
+
+        this.logger.log(`条目新增成功 - ID: ${newId}`);
+
+        // 返回新增的数据
+        return {
+            id: newId,
+            reportId: item.reportId,
+            tabType: item.tabType,
+            sourceType: item.sourceType,
+            parentId: item.parentId,
+            contentJson: dto.contentJson,
+            sortOrder: item.sortOrder,
+        };
+    }
 
   /**
    * 更新单行条目

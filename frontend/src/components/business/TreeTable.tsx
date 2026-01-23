@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Table, Input, InputNumber, Select, Button, Space, message } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
-import type { ReportItem } from '@/types';
+import React, {useState} from 'react';
+import {Button, Input, InputNumber, message, Select, Space, Table} from 'antd';
+import {DeleteOutlined, PlusOutlined} from '@ant-design/icons';
+import type {ColumnsType} from 'antd/es/table';
+import type {ReportItem} from '@/types';
 
 /**
  * 树形表格组件属性
@@ -112,6 +112,29 @@ const TreeTable: React.FC<TreeTableProps> = ({
     setData(addRecursive(data));
     setHasChanges(true);
   };
+
+    /**
+     * 添加主任务
+     */
+    const addMainTask = () => {
+        const newTask: ReportItem = {
+            id: `temp_${Date.now()}`,
+            tabType: 'SELF',
+            sourceType: 'MANUAL',
+            content: {
+                jiraKey: '',
+                title: '',
+                status: 'In Progress',
+                assignee: '',
+                storyPoints: 0,
+                workDays: 0,
+            },
+            sortOrder: data.length,
+        };
+
+        setData([...data, newTask]);
+        setHasChanges(true);
+    };
 
   /**
    * 删除任务
@@ -339,11 +362,20 @@ const TreeTable: React.FC<TreeTableProps> = ({
 
   return (
     <div>
-      {editable && hasChanges && (
-        <div style={{ marginBottom: 16, textAlign: 'right' }}>
-          <Button type="primary" onClick={saveAll}>
-            保存全部
-          </Button>
+        {editable && (
+            <div style={{marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <Button
+                    type="dashed"
+                    icon={<PlusOutlined/>}
+                    onClick={addMainTask}
+                >
+                    添加主任务
+                </Button>
+                {hasChanges && (
+                    <Button type="primary" onClick={saveAll}>
+                        保存全部
+                    </Button>
+                )}
         </div>
       )}
       <Table

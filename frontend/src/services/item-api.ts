@@ -1,10 +1,23 @@
-import { httpClient } from './http-client';
+import {httpClient} from './http-client';
 import type {ItemResponse, UpdateManualItemsRequest, UpdateManualItemsResponse} from '@/types/api';
 
 /**
  * 条目编辑 API
  */
 export class ItemAPI {
+    /**
+     * 新增条目
+     */
+    static async createItem(data: {
+        reportId: string;
+        tabType: 'DONE' | 'SELF' | 'PLAN';
+        contentJson: Record<string, any>;
+        sortOrder: number;
+    }): Promise<ItemResponse> {
+        const response = await httpClient.post<ItemResponse>('/items', data);
+        return response.data;
+    }
+
   /**
    * 更新单行条目
    */

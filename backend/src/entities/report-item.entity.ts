@@ -14,7 +14,7 @@ import {ReportEntity} from './report.entity';
 export class ReportItemEntity extends BaseIdEntity {
     @Column({name: 'report_id', type: 'bigint', comment: '关联报告 ID'})
     @Transform(({value}) => (value == null ? value : value.toString()), {toPlainOnly: true})
-    reportId: number;
+    reportId: string;
 
     @ManyToOne(() => ReportEntity, {onDelete: 'CASCADE'})
     @JoinColumn({name: 'report_id'})
@@ -43,7 +43,7 @@ export class ReportItemEntity extends BaseIdEntity {
         comment: '父节点 ID（用于自采数据的任务层级，根节点为 NULL）',
     })
     @Transform(({value}) => (value == null ? value : value.toString()), {toPlainOnly: true})
-    parentId: number | null;
+    parentId: string | null;
 
     @Column({
         name: 'content_json',

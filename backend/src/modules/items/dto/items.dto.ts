@@ -1,5 +1,25 @@
-import {IsNotEmpty, IsObject, IsArray, ValidateNested, IsOptional, IsNumber, IsString} from 'class-validator';
+import {IsArray, IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, ValidateNested} from 'class-validator';
 import {Type} from 'class-transformer';
+
+/**
+ * 新增条目请求 DTO
+ */
+export class CreateItemDto {
+    @IsNotEmpty()
+    @IsString()
+    reportId: string;
+
+    @IsNotEmpty()
+    @IsEnum(['DONE', 'SELF', 'PLAN'])
+    tabType: 'DONE' | 'SELF' | 'PLAN';
+
+    @IsNotEmpty()
+    @IsObject()
+    contentJson: Record<string, any>;
+
+    @IsNumber()
+    sortOrder: number;
+}
 
 /**
  * 更新条目请求 DTO

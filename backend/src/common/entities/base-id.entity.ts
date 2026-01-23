@@ -15,5 +15,5 @@ export abstract class BaseIdEntity {
     @Transform(({value}) => (value == null ? value : value.toString()), {
         toPlainOnly: true,
     })
-    id: number; // TypeScript 类型改为 number，与 TypeORM 内部处理一致
+    id: string; // TypeScript 类型为 string,防止 JavaScript 精度丢失(BIGINT 超过 53 位)
 }

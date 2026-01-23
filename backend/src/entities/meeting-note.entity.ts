@@ -12,7 +12,7 @@ import {ReportEntity} from './report.entity';
 export class MeetingNoteEntity extends BaseIdEntity {
     @Column({name: 'report_id', type: 'bigint', comment: '关联报告 ID'})
     @Transform(({value}) => (value == null ? value : value.toString()), {toPlainOnly: true})
-    reportId: number;
+    reportId: string;
 
     @ManyToOne(() => ReportEntity, {onDelete: 'CASCADE'})
     @JoinColumn({name: 'report_id'})
