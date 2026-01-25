@@ -1,100 +1,163 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
-import {Space, Spin, Card, Result} from 'antd';
-import {useReportDetail} from '@/hooks';
-import {ActionBar} from '@/components/business/ActionBar';
+import {useParams} from 'react-router-dom';
+import {Button, Result, Space, Spin} from 'antd';
+import {DownloadOutlined, MenuOutlined, PlusOutlined} from '@ant-design/icons';
+import {useExportReport, useGenerateReport, useReportDetail} from '@/hooks';
 import {VersionSelector} from '@/components/business/VersionSelector';
 import MetricDashboard from './MetricDashboard';
 import TabEditor from './TabEditor';
 import MeetingSidebar from '@/features/sidebar/MeetingSidebar';
 import {useUIStore} from '@/store/uiStore';
+import {theme} from '@/styles/theme';
 
 /**
  * 周报详情页组件
  * 展示完整的周报内容，包括版本选择、指标看板、Tab 编辑器和会议待办
  */
 const ReportPage: React.FC = () => {
-  const { reportId } = useParams<{ reportId: string }>();
+    const {reportId} = useParams<{ reportId: string }>();
 
     // 获取周报详情数据
     const {data: report, isLoading, error} = useReportDetail(reportId || '');
 
     // 获取侧边栏状态
-    const {isSidebarOpen, closeSidebar} = useUIStore();
+    const {isSidebarOpen, closeSidebar, toggleSidebar, setCurrentReportId} = useUIStore();
 
-  // 加载中状态
-    if (isLoading) {
+    // 生成和导出 Hooks
+    const {mutate: generateReport, isPending: isGenerating} = useGenerateReport();
+    const {mutate: exportReport, isPending: isExporting} = useExportReport();
+
+    // 同步当前 reportId 到 store
+    React.useEffect(() => {
+        if (reportId) {
+            setCurrentReportId(reportId);
+        }
+    }, [reportId, setCurrentReportId]);
+
+    /**
+     * 处理生成周报
+     */
+    const handleGenerate = () => {
+        generateReport(undefined, {
+            onSuccess: (data) => {
+                // 跳转逻辑由 useGenerateReport Hook 处理
+            },
+        });
+    };
+
+    /**
+     * 处理导出 Excel
+     */
+    const handleExport = () => {
+        if (!reportId || !report?.weekRange) {
+            return;
+        }
+        exportReport({reportId, weekRange: report.weekRange});
+    };
+
     return (
-      <div style={{ textAlign: 'center', padding: '100px 0' }}>
-        <Spin size="large" tip="加载中..." />
-      </div>
-    );
-  }
+        <div className="report-page" style={{
+            background: theme.colors.background,
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
+            {/* 全局独立操作区 - 始终显示，不依赖 report 数据 */}
+            <div
+                className="page-header"
+                style={{
+                    padding: `${theme.spacing.md}px ${theme.spacing.lg}px`,
+                    background: theme.colors.cardBg,
+                    boxShadow: theme.shadows.header,
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 100,
+                    flexShrink: 0,
+                }}
+            >
+                <Space size="large">
+                    {/* 版本选择器 - 独立组件,不接收 currentReportId */}
+                    <VersionSelector/>
 
-  // 错误状态
-    if (error) {
-    return (
-        <Result
-            status="error"
-            title="加载失败"
-            subTitle={`加载周报失败：${error.message}`}
-            style={{marginTop: 100}}
-        />
-    );
-    }
+                    {/* 操作按钮 - 直接在此定义,不依赖 ActionBar 组件 */}
+                    <Space>
+                        <Button type="primary" icon={<PlusOutlined/>} loading={isGenerating} onClick={handleGenerate}>
+                            生成本周周报
+                        </Button>
+                        <Button
+                            icon={<DownloadOutlined/>}
+                            loading={isExporting}
+                            disabled={!reportId}
+                            onClick={handleExport}
+                        >
+                            导出 Excel
+                        </Button>
+                        <Button icon={<MenuOutlined/>} onClick={toggleSidebar}>
+                            会议待办
+                        </Button>
+                    </Space>
+                </Space>
+            </div>
 
-    // 周报不存在
-    if (!report) {
-        return (
-            <Result
-                status="404"
-                title="周报不存在"
-                subTitle="未找到指定的周报，请检查 URL 或返回首页"
-                style={{marginTop: 100}}
-      />
-    );
-  }
+            {/* 数据展示区域 - 独立渲染 */}
+            <div className="page-content"
+                 style={{padding: `${theme.spacing.md}px ${theme.spacing.lg}px`, flex: 1, overflow: 'auto'}}>
+                {/* 加载中状态 */}
+                {isLoading && (
+                    <div style={{textAlign: 'center', padding: '100px 0'}}>
+                        <Spin size="large" tip="加载中..."/>
+                    </div>
+                )}
 
-  return (
-    <div style={{ padding: '24px' }}>
-      {/* 顶部操作栏 */}
-      <Card style={{ marginBottom: 24 }}>
-          <Space split={<span style={{margin: '0 8px', color: '#d9d9d9'}}>|</span>}>
-              {/* 版本选择器 */}
-              <VersionSelector
-                  currentReportId={report.id}
-                  currentWeekRange={report.weekRange}
-              />
+                {/* 错误状态 */}
+                {error && (
+                    <Result
+                        status="error"
+                        title="加载失败"
+                        subTitle={`加载周报失败：${error.message}`}
+                        style={{marginTop: 100}}
+                    />
+                )}
 
-              {/* 操作按钮 */}
-              <ActionBar
-                  reportId={report.id}
-                  weekRange={report.weekRange}
-              />
-        </Space>
-      </Card>
+                {/* 周报不存在 */}
+                {!isLoading && !error && !report && (
+                    <Result
+                        status="404"
+                        title="周报不存在"
+                        subTitle="未找到指定的周报，请检查 URL 或返回首页"
+                        style={{marginTop: 100}}
+                    />
+                )}
 
-      {/* 指标看板 */}
-        {report.metrics && (
-        <MetricDashboard metrics={report.metrics} />
-      )}
+                {/* 周报数据展示 */}
+                {report && (
+                    <>
+                        {/* 指标看板 */}
+                        {report.metrics && (
+                            <MetricDashboard metrics={report.metrics}/>
+                        )}
 
-      {/* Tab 编辑器 */}
-        {report.items && (
-        <TabEditor
-          items={report.items}
-          reportId={report.id}
-        />
-      )}
+                        {/* Tab 编辑器 */}
+                        {report.items && (
+                            <TabEditor
+                                items={report.items}
+                                reportId={report.id}
+                            />
+                        )}
+                    </>
+                )}
+            </div>
 
-      {/* 会议待办侧边栏 */}
-      <MeetingSidebar
-          visible={isSidebarOpen}
-          onClose={closeSidebar}
-          content={report.notes || ''}
-          reportId={report.id}
-      />
-    </div>
+            {/* 会议待办侧边栏 */}
+            {report && (
+                <MeetingSidebar
+                    visible={isSidebarOpen}
+                    onClose={closeSidebar}
+                    content={report.notes || ''}
+                    reportId={report.id}
+                />
+            )}
+        </div>
   );
 };
 

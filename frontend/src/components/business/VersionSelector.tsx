@@ -1,14 +1,11 @@
 import React from 'react';
-import {Dropdown, Button, Modal, Space, Tag} from 'antd';
 import type {MenuProps} from 'antd';
-import {
-    DownOutlined,
-    CheckOutlined,
-    DeleteOutlined,
-    ExclamationCircleOutlined,
-} from '@ant-design/icons';
-import {useReports, useDeleteReport} from '@/hooks';
+import {Button, Dropdown, Modal, Space, Tag} from 'antd';
+import {CheckOutlined, DeleteOutlined, DownOutlined, ExclamationCircleOutlined,} from '@ant-design/icons';
+import {useDeleteReport, useReports} from '@/hooks';
 import {useNavigate} from 'react-router-dom';
+import {useUIStore} from '@/store/uiStore';
+import dayjs from 'dayjs';
 
 /**
  * VersionSelector 版本选择器组件
@@ -21,18 +18,11 @@ import {useNavigate} from 'react-router-dom';
  * 5. 当前版本高亮显示
  */
 
-interface VersionSelectorProps {
-    /** 当前选中的周报 ID */
-    currentReportId?: string;
-    /** 当前周报的周范围 */
-    currentWeekRange?: string;
-}
-
-export const VersionSelector: React.FC<VersionSelectorProps> = ({
-                                                                    currentReportId,
-                                                                    currentWeekRange,
-                                                                }) => {
+export const VersionSelector: React.FC = () => {
     const navigate = useNavigate();
+
+    // 从 store 获取当前选中的周报 ID
+    const {currentReportId} = useUIStore();
 
     // 获取历史周报列表
     const {data: reportsData, isLoading} = useReports({page: 1, pageSize: 50});
@@ -59,7 +49,7 @@ export const VersionSelector: React.FC<VersionSelectorProps> = ({
         Modal.confirm({
             title: '确认删除周报',
             icon: <ExclamationCircleOutlined/>,
-            content: `确定要删除周报「${weekRange}」吗？此操作不可恢复！`,
+            content: `确定要删除周报「${weekRange}」吗?此操作不可恢复!`,
             okText: '确认删除',
             okType: 'danger',
             cancelText: '取消',
@@ -77,6 +67,27 @@ export const VersionSelector: React.FC<VersionSelectorProps> = ({
     };
 
     /**
+     * 格式化日期
+     */
+    const formatDate = (dateString: string): string => {
+        return dayjs(dateString).format('YYYY-MM-DD HH:mm');
+    };
+
+    /**
+     * 获取当前选中周报的显示文本
+     */
+    const getCurrentDisplayText = (): string => {
+        if (!currentReportId || !reportsData?.items) {
+            return '选择版本';
+        }
+        const currentReport = reportsData.items.find(r => r.id === currentReportId);
+        if (!currentReport) {
+            return '选择版本';
+        }
+        return `${currentReport.weekRange} (第${currentReport.weekNumber}周) - ${formatDate(currentReport.createdAt)}`;
+    };
+
+    /**
      * 构建下拉菜单项
      */
     const menuItems: MenuProps['items'] = reportsData?.items.map((report) => {
@@ -88,7 +99,7 @@ export const VersionSelector: React.FC<VersionSelectorProps> = ({
                 <Space style={{width: '100%', justifyContent: 'space-between'}}>
                     <Space>
                         {isCurrent && <CheckOutlined style={{color: '#1677ff'}}/>}
-                        <span>{report.weekRange}</span>
+                        <span>{report.weekRange} (第{report.weekNumber}周) - {formatDate(report.createdAt)}</span>
                         {isCurrent && <Tag color="blue">当前</Tag>}
                     </Space>
                     <Button
@@ -115,7 +126,7 @@ export const VersionSelector: React.FC<VersionSelectorProps> = ({
         >
             <Button>
                 <Space>
-                    {currentWeekRange || '选择版本'}
+                    {getCurrentDisplayText()}
                     <DownOutlined/>
                 </Space>
             </Button>

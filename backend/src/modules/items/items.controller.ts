@@ -12,7 +12,7 @@ import {
  * 条目管理 Controller
  * 提供单行条目编辑和批量更新自采数据功能
  */
-@Controller('items')
+@Controller()
 export class ItemsController {
   private readonly logger = new Logger(ItemsController.name);
 
@@ -25,7 +25,7 @@ export class ItemsController {
      * @param dto 新增数据
      * @returns 新增的条目
      */
-    @Post()
+    @Post('items')
     async createItem(@Body() dto: CreateItemDto): Promise<ItemResponseDto> {
         this.logger.log(`收到新增条目请求 - 周报 ID: ${dto.reportId}, Tab: ${dto.tabType}`);
 
@@ -47,7 +47,7 @@ export class ItemsController {
    * @param dto 更新数据
    * @returns 更新后的条目
    */
-  @Patch(':id')
+  @Patch('items/:id')
   async updateItem(
     @Param('id') id: string,
     @Body() dto: UpdateItemDto,
@@ -55,18 +55,40 @@ export class ItemsController {
     this.logger.log(`收到更新条目请求 - ID: ${id}`);
 
     try {
-      const result = await this.itemsService.updateItem(id, dto);
-      this.logger.log(`条目更新成功 - ID: ${id}`);
-      return result;
+        const result = await this.itemsService.updateItem(id, dto);
+        this.logger.log(`条目更新成功 - ID: ${id}`);
+        return result;
     } catch (error) {
-      this.logger.error(`条目更新失败: ${error.message}`, error.stack);
-      throw error;
+        this.logger.error(`条目更新失败: ${error.message}`, error.stack);
+        throw error;
     }
   }
 
     /**
-     * PUT /api/reports/:reportId/manual-items
-     * 批量更新手动条目(SELF 标签页)
+     * PUT /api/reports/:id/manual-items
+     * 批量更新手动条目(SELF 标签页)（符合需求规格的路径）
+     *
+     * 功能说明:
+     * - 全量替换指定周报的 SELF 标签页数据
+     * - 支持树形结构(通过 parentId 关联)
+     * - 自动处理临时 ID 映射(temp_ 开头的 ID 会被替换为真实 Snowflake ID)
+     * - 使用事务保证数据一致性
+     *
+     * @param id 周报 ID
+     * @param dto 批量更新数据
+     * @returns 更新结果(包含 ID 映射表)
+     */
+    @Put('reports/:id/manual-items')
+    async updateManualItemsNew(
+        @Param('id') id: string,
+        @Body() dto: UpdateManualItemsDto,
+    ): Promise<UpdateManualItemsResponseDto> {
+        return this.updateManualItems(id, dto);
+    }
+
+    /**
+     * PUT /api/items/reports/:reportId/manual-items
+     * 批量更新手动条目(SELF 标签页)（向后兼容的旧路径）
      *
      * 功能说明:
      * - 全量替换指定周报的 SELF 标签页数据
@@ -78,7 +100,7 @@ export class ItemsController {
      * @param dto 批量更新数据
      * @returns 更新结果(包含 ID 映射表)
      */
-    @Put('reports/:reportId/manual-items')
+    @Put('items/reports/:reportId/manual-items')
     async updateManualItems(
         @Param('reportId') reportId: string,
         @Body() dto: UpdateManualItemsDto,

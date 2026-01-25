@@ -1,8 +1,9 @@
-import React, {useState, useEffect, useCallback} from 'react';
-import {Drawer, Input, Button, Space, Typography, Spin} from 'antd';
-import {SaveOutlined, CloseOutlined, CheckOutlined} from '@ant-design/icons';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Button, Drawer, Input, Space, Spin, Typography} from 'antd';
+import {CheckOutlined, CloseOutlined, SaveOutlined} from '@ant-design/icons';
 import {useUpdateNotes} from '@/hooks';
 import {debounce} from 'lodash-es';
+import {theme} from '@/styles/theme';
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
@@ -136,7 +137,7 @@ const MeetingSidebar: React.FC<MeetingSidebarProps> = ({
 
   return (
     <Drawer
-      title={
+        title={
         <Space>
           <Title level={4} style={{ margin: 0 }}>
             会议待办
@@ -151,26 +152,34 @@ const MeetingSidebar: React.FC<MeetingSidebarProps> = ({
                 </Space>
             )}
             {hasChanges && !isSaving && (
-            <Text type="warning" style={{ fontSize: 12 }}>
-                (有未保存的更改)
-            </Text>
-          )}
+                <Text type="warning" style={{fontSize: 12}}>
+                    (有未保存的更改)
+                </Text>
+            )}
         </Space>
-      }
-      placement="right"
-      width={500}
-      open={visible}
-      onClose={handleClose}
-      footer={
-        <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-          <Button icon={<CloseOutlined />} onClick={handleClose}>
-            关闭
-          </Button>
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            onClick={handleManualSave}
-            loading={isSaving}
+        }
+        placement="right"
+        width={520}
+        open={visible}
+        onClose={handleClose}
+        bodyStyle={{
+            padding: `${theme.spacing.lg}px`,
+            backgroundColor: theme.colors.background,
+        }}
+        headerStyle={{
+            padding: `${theme.spacing.md}px ${theme.spacing.lg}px`,
+            borderBottom: `1px solid ${theme.colors.border}`,
+        }}
+        footer={
+            <Space style={{width: '100%', justifyContent: 'flex-end'}}>
+                <Button icon={<CloseOutlined/>} onClick={handleClose}>
+                    关闭
+                </Button>
+                <Button
+                    type="primary"
+                    icon={<SaveOutlined/>}
+                    onClick={handleManualSave}
+                    loading={isSaving}
             disabled={!hasChanges}
           >
               立即保存
@@ -178,27 +187,35 @@ const MeetingSidebar: React.FC<MeetingSidebarProps> = ({
         </Space>
       }
     >
-      <div style={{ marginBottom: 16 }}>
-        <Text type="secondary">
-            记录本周会议讨论的待办事项，支持多行文本输入。编辑后会自动保存（500ms 防抖）。
-        </Text>
-      </div>
-      <TextArea
-        value={editContent}
-        onChange={handleContentChange}
-        placeholder="请输入会议待办事项，每行一条..."
-        autoSize={{ minRows: 20, maxRows: 30 }}
-        disabled={isSaving}
-        style={{
-          fontSize: 14,
-          lineHeight: 1.8,
-        }}
-      />
-      <div style={{ marginTop: 16 }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>
-            💡 提示：编辑后会自动保存，也可点击"立即保存"按钮手动保存
-        </Text>
-      </div>
+        <div style={{marginBottom: theme.spacing.lg}}>
+            <Text type="secondary">
+                记录本周会议讨论的待办事项，支持多行文本输入。编辑后会自动保存（500ms 防抖）。
+            </Text>
+        </div>
+        <TextArea
+            value={editContent}
+            onChange={handleContentChange}
+            placeholder="请输入会议待办事项，每行一条..."
+            autoSize={{minRows: 20, maxRows: 30}}
+            disabled={isSaving}
+            style={{
+                fontSize: 14,
+                lineHeight: 1.8,
+                borderRadius: theme.borderRadius.md,
+                borderColor: theme.colors.border,
+                padding: `${theme.spacing.sm}px`,
+            }}
+        />
+        <div style={{
+            marginTop: theme.spacing.lg,
+            padding: `${theme.spacing.md}px`,
+            backgroundColor: '#f9f9f9',
+            borderRadius: theme.borderRadius.sm
+        }}>
+            <Text type="secondary" style={{fontSize: 12}}>
+                💡 提示：编辑后会自动保存，也可点击"立即保存"按钮手动保存
+            </Text>
+        </div>
     </Drawer>
   );
 };

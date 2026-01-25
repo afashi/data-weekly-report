@@ -1,5 +1,5 @@
 import React from 'react';
-import { Space, Typography } from 'antd';
+import {Space, Typography} from 'antd';
 
 const { Text } = Typography;
 
@@ -47,21 +47,43 @@ interface StackedProgressProps {
  * ```
  */
 const StackedProgress: React.FC<StackedProgressProps> = ({
-  items,
-  total,
-  height = 24,
-  showPercent = true,
-  showLegend = true,
-}) => {
-  /**
-   * 计算百分比
-   */
-  const calculatePercent = (value: number): number => {
-    if (total === 0) return 0;
-    return Math.round((value / total) * 100);
-  };
+                                                             items,
+                                                             total,
+                                                             height = 32,
+                                                             showPercent = true,
+                                                             showLegend = true,
+                                                         }) => {
+    /**
+     * 调整颜色亮度（用于生成渐变色）
+     */
+    const adjustColorBrightness = (color: string, amount: number): string => {
+        // 移除 # 号
+        const usePound = color[0] === '#';
+        const col = usePound ? color.slice(1) : color;
 
-  /**
+        // 转换为 RGB
+        const num = parseInt(col, 16);
+        let r = (num >> 16) + amount;
+        let g = ((num >> 8) & 0x00ff) + amount;
+        let b = (num & 0x0000ff) + amount;
+
+        // 限制范围 0-255
+        r = Math.max(Math.min(255, r), 0);
+        g = Math.max(Math.min(255, g), 0);
+        b = Math.max(Math.min(255, b), 0);
+
+        return (usePound ? '#' : '') + (r << 16 | g << 8 | b).toString(16).padStart(6, '0');
+    };
+
+    /**
+     * 计算百分比
+     */
+    const calculatePercent = (value: number): number => {
+        if (total === 0) return 0;
+        return Math.round((value / total) * 100);
+    };
+
+    /**
    * 渲染堆叠进度条
    */
   const renderStackedBar = () => {
@@ -70,12 +92,13 @@ const StackedProgress: React.FC<StackedProgressProps> = ({
     return (
       <div
         style={{
-          position: 'relative',
-          width: '100%',
-          height: `${height}px`,
-          backgroundColor: '#f0f0f0',
-          borderRadius: '8px',
-          overflow: 'hidden',
+            position: 'relative',
+            width: '100%',
+            height: `${height}px`,
+            backgroundColor: '#f5f5f5',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
         }}
       >
         {items.map((item, index) => {
@@ -85,16 +108,18 @@ const StackedProgress: React.FC<StackedProgressProps> = ({
 
           return (
             <div
-              key={index}
-              style={{
-                position: 'absolute',
-                left: `${left}%`,
-                width: `${percent}%`,
-                height: '100%',
-                backgroundColor: item.color,
-                transition: 'all 0.3s ease',
-              }}
-              title={`${item.label}: ${item.value} (${percent}%)`}
+                key={index}
+                className="progress-segment"
+                style={{
+                    position: 'absolute',
+                    left: `${left}%`,
+                    width: `${percent}%`,
+                    height: '100%',
+                    background: `linear-gradient(180deg, ${item.color}, ${adjustColorBrightness(item.color, -15)})`,
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    cursor: 'pointer',
+                }}
+                title={`${item.label}: ${item.value} (${percent}%)`}
             />
           );
         })}

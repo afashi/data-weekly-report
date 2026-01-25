@@ -2,6 +2,7 @@ import {Card, Col, Row, Statistic} from 'antd';
 import {CheckCircleOutlined, FileTextOutlined, SyncOutlined} from '@ant-design/icons';
 import type {MetricDto} from '@/types/api';
 import StackedProgress from '@/components/business/StackedProgress';
+import {theme} from '@/styles/theme';
 
 interface MetricDashboardProps {
   metrics: MetricDto[];
@@ -33,28 +34,34 @@ export default function MetricDashboard({ metrics }: MetricDashboardProps) {
   const reviewEtl = getMetricValue('REVIEW_ETL');
 
   return (
-    <Row gutter={[16, 16]}>
-      {/* 业务量卡片 */}
-        <Col xs={24} sm={24} md={12}>
-        <Card
-          title={
-            <span>
-              <FileTextOutlined style={{ marginRight: 8 }} />
+      <Row gutter={[16, 16]} style={{marginBottom: theme.spacing.lg}}>
+          {/* 业务量卡片 */}
+          <Col xs={24} sm={24} md={12}>
+              <Card
+                  title={
+                      <span>
+              <FileTextOutlined style={{marginRight: 8}}/>
               业务量统计
             </span>
-          }
-          bordered={false}
-          style={{ height: '100%' }}
-        >
-          <Statistic
-            title="总计"
-            value={totalCount}
-            suffix="条"
-            valueStyle={{ color: '#1677ff', fontSize: 32, fontWeight: 600 }}
-          />
-          <div style={{ marginTop: 24 }}>
-              <StackedProgress
-                  total={totalCount}
+                  }
+                  bordered={false}
+                  className="metric-card-hover"
+                  style={{
+                      height: '100%',
+                      borderRadius: theme.borderRadius.md,
+                      boxShadow: theme.shadows.card,
+                      transition: 'box-shadow 0.3s ease',
+                  }}
+              >
+                  <Statistic
+                      title="总计"
+                      value={totalCount}
+                      suffix="条"
+                      valueStyle={{color: '#1677ff', fontSize: 32, fontWeight: 600}}
+                  />
+                  <div style={{marginTop: 24}}>
+                      <StackedProgress
+                          total={totalCount}
                   items={[
                       {label: '流程数据', value: processCount, color: '#52c41a'},
                       {label: '自采数据', value: manualCount, color: '#1677ff'}
@@ -69,25 +76,31 @@ export default function MetricDashboard({ metrics }: MetricDashboardProps) {
 
       {/* 验证环境 ETL 卡片 */}
         <Col xs={24} sm={12} md={6}>
-        <Card
-          title={
-            <span>
-              <SyncOutlined style={{ marginRight: 8 }} />
+            <Card
+                title={
+                    <span>
+              <SyncOutlined style={{marginRight: 8}}/>
               验证环境 ETL
             </span>
-          }
-          bordered={false}
-          style={{ height: '100%' }}
-        >
-          <Statistic
-            title="最新加载时间"
-            value={verifyEtl}
-            valueStyle={{
-              color: getMetricStatus('VERIFY_ETL') === 'success' ? '#52c41a' : '#666',
-              fontSize: 20,
-            }}
-            prefix={
-              getMetricStatus('VERIFY_ETL') === 'success' ? (
+                }
+                bordered={false}
+                className="metric-card-hover"
+                style={{
+                    height: '100%',
+                    borderRadius: theme.borderRadius.md,
+                    boxShadow: theme.shadows.card,
+                    transition: 'box-shadow 0.3s ease',
+                }}
+            >
+                <Statistic
+                    title="最新加载时间"
+                    value={verifyEtl}
+                    valueStyle={{
+                        color: getMetricStatus('VERIFY_ETL') === 'success' ? '#52c41a' : '#666',
+                        fontSize: 20,
+                    }}
+                    prefix={
+                        getMetricStatus('VERIFY_ETL') === 'success' ? (
                 <CheckCircleOutlined />
               ) : null
             }
@@ -102,25 +115,31 @@ export default function MetricDashboard({ metrics }: MetricDashboardProps) {
 
       {/* 复盘环境 ETL 卡片 */}
         <Col xs={24} sm={12} md={6}>
-        <Card
-          title={
-            <span>
-              <SyncOutlined style={{ marginRight: 8 }} />
+            <Card
+                title={
+                    <span>
+              <SyncOutlined style={{marginRight: 8}}/>
               复盘环境 ETL
             </span>
-          }
-          bordered={false}
-          style={{ height: '100%' }}
-        >
-          <Statistic
-            title="最新加载时间"
-            value={reviewEtl}
-            valueStyle={{
-              color: getMetricStatus('REVIEW_ETL') === 'success' ? '#52c41a' : '#666',
-              fontSize: 20,
-            }}
-            prefix={
-              getMetricStatus('REVIEW_ETL') === 'success' ? (
+                }
+                bordered={false}
+                className="metric-card-hover"
+                style={{
+                    height: '100%',
+                    borderRadius: theme.borderRadius.md,
+                    boxShadow: theme.shadows.card,
+                    transition: 'box-shadow 0.3s ease',
+                }}
+            >
+                <Statistic
+                    title="最新加载时间"
+                    value={reviewEtl}
+                    valueStyle={{
+                        color: getMetricStatus('REVIEW_ETL') === 'success' ? '#52c41a' : '#666',
+                        fontSize: 20,
+                    }}
+                    prefix={
+                        getMetricStatus('REVIEW_ETL') === 'success' ? (
                 <CheckCircleOutlined />
               ) : null
             }

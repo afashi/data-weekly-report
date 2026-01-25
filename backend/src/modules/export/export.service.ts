@@ -197,23 +197,28 @@ export class ExportService {
     const rootItems = items.filter((item) => !item.parentId);
     rootItems.forEach((rootItem) => {
       const rootContent = JSON.parse(rootItem.contentJson);
-        const rootRow = sheet.addRow({
+      const rootRow = sheet.addRow({
         title: rootContent.title || '',
         assignee: rootContent.assignee || '',
         workDays: rootContent.workDays || '',
       });
 
-        // 设置根节点样式（加粗）
-        rootRow.font = {bold: true};
+      // 设置根节点样式（加粗+深灰色背景）
+      rootRow.font = {bold: true};
+      rootRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: {argb: 'FFD3D3D3'}  // 深灰色背景
+      };
 
       // 添加子任务（缩进）
-        // 注意：需要将 BIGINT 转换为字符串进行比较
-        const children = items.filter(
-            (item) => item.parentId && item.parentId.toString() === rootItem.id.toString()
-        );
+      // 注意：需要将 BIGINT 转换为字符串进行比较
+      const children = items.filter(
+          (item) => item.parentId && item.parentId.toString() === rootItem.id.toString()
+      );
       children.forEach((child) => {
         const childContent = JSON.parse(child.contentJson);
-          const childRow = sheet.addRow({
+        const childRow = sheet.addRow({
           title: `  └─ ${childContent.title || ''}`,
           assignee: childContent.assignee || '',
           workDays: childContent.workDays || '',

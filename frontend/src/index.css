@@ -1,76 +1,161 @@
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-}
+/**
+ * 全局样式文件
+ * 定义全局 CSS 变量、重置样式、通用类、动画效果
+ */
 
+/* ===== 全局重置样式 ===== */
 * {
     margin: 0;
     padding: 0;
-}
-
-html,
-body {
-    height: 100%;
+    box-sizing: border-box;
 }
 
 body {
-    line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #f5f5f5;
 }
 
-img,
-picture,
-video,
-canvas,
-svg {
-    display: block;
-    max-width: 100%;
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-input,
-button,
-textarea,
-select {
-    font: inherit;
-}
-
-p,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    overflow-wrap: break-word;
-}
-
-#root {
-    height: 100%;
-}
-
-/* 数字等宽字体（用于指标） */
-.metric-value {
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-    font-variant-numeric: tabular-nums;
-}
-
-/* 滚动条样式 */
+/* ===== 全局滚动条样式 ===== */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #f0f0f0;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #888;
+    background: #bfbfbf;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: #8c8c8c;
+}
+
+/* ===== 指标卡片 Hover 效果 ===== */
+.metric-card-hover {
+    transition: all 0.3s ease;
+}
+
+.metric-card-hover:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-2px);
+}
+
+/* ===== 进度条段 Hover 效果 ===== */
+.progress-segment:hover {
+    filter: brightness(1.1);
+    transform: scaleY(1.05);
+}
+
+/* ===== 表格行 Hover 增强 ===== */
+.ant-table-tbody > tr:hover > td {
+    background: #fafafa !important;
+}
+
+/* ===== 按钮点击波纹效果增强 ===== */
+.ant-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-btn:active {
+    transform: scale(0.98);
+}
+
+/* ===== 版本选择器下拉项 Hover ===== */
+.ant-dropdown-menu-item:hover {
+    background-color: #f5f5f5;
+}
+
+/* ===== 加载动画优化 ===== */
+.ant-spin-dot-item {
+    background-color: #1677ff;
+}
+
+/* ===== 全局动画类 ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* ===== 工具类 ===== */
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.mb-sm {
+    margin-bottom: 8px;
+}
+
+.mb-md {
+    margin-bottom: 16px;
+}
+
+.mb-lg {
+    margin-bottom: 24px;
+}
+
+.mt-sm {
+    margin-top: 8px;
+}
+
+.mt-md {
+    margin-top: 16px;
+}
+
+.mt-lg {
+    margin-top: 24px;
+}
+
+/* ===== 卡片增强样式 ===== */
+.card-shadow-sm {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.card-shadow-md {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.card-shadow-lg {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
 }

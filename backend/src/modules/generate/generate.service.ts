@@ -64,8 +64,8 @@ export class GenerateService {
             const [jiraDoneTasks, jiraPlanTasks, brvMetrics, revMetrics] = await Promise.all([
                 this.jiraAdapter.fetchDoneTasks(),
                 this.jiraAdapter.fetchPlanTasks(),
-                this.sqlAdapter.fetchBrvMetrics(),
-                this.sqlAdapter.fetchRevMetrics(),
+                this.sqlAdapter.fetchBrvMetrics(weekNumber),
+                this.sqlAdapter.fetchRevMetrics(weekNumber),
             ]);
 
             this.logger.log(

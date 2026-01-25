@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
-import {Button, Input, InputNumber, message, Popconfirm, Select, Space, Table} from 'antd';
+import {Button, ConfigProvider, Input, InputNumber, message, Popconfirm, Select, Space, Table} from 'antd';
 import {CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SaveOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
 import type {ReportItem} from '@/types';
+import {theme} from '@/styles/theme';
 
 /**
  * 报表表格组件属性
@@ -407,31 +408,45 @@ const ReportTable: React.FC<ReportTableProps> = ({
 
   return (
       <div>
+          <ConfigProvider
+              theme={{
+                  components: {
+                      Table: {
+                          headerBg: '#fafafa',
+                          headerColor: theme.colors.textPrimary,
+                          rowHoverBg: '#f5f5f5',
+                          borderColor: theme.colors.border,
+                          borderRadius: theme.borderRadius.md,
+                      },
+                  },
+              }}
+          >
+              <Table
+                  columns={columns}
+                  dataSource={localData}
+                  loading={loading}
+                  rowKey="id"
+                  pagination={{
+                      pageSize: 20,
+                      showSizeChanger: true,
+                      showTotal: (total) => `共 ${total} 条`,
+                  }}
+                  scroll={{x: 1200}}
+                  size="middle"
+                  style={{borderRadius: theme.borderRadius.md, overflow: 'hidden'}}
+              />
+          </ConfigProvider>
           {editable && onAdd && (
-              <div style={{marginBottom: 16}}>
+              <div style={{marginTop: 16, textAlign: 'left'}}>
                   <Button
                       type="dashed"
                       icon={<PlusOutlined/>}
                       onClick={addNewRow}
-                      block
                   >
                       新增一行
                   </Button>
               </div>
           )}
-          <Table
-              columns={columns}
-              dataSource={localData}
-              loading={loading}
-              rowKey="id"
-              pagination={{
-                  pageSize: 20,
-                  showSizeChanger: true,
-                  showTotal: (total) => `共 ${total} 条`,
-              }}
-              scroll={{x: 1200}}
-              size="middle"
-          />
       </div>
   );
 };

@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
-import {Button, Input, InputNumber, message, Select, Space, Table} from 'antd';
+import {Button, ConfigProvider, Input, InputNumber, message, Select, Space, Table} from 'antd';
 import {DeleteOutlined, PlusOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
 import type {ReportItem} from '@/types';
+import {theme} from '@/styles/theme';
 
 /**
  * 树形表格组件属性
@@ -361,35 +362,50 @@ const TreeTable: React.FC<TreeTableProps> = ({
   }
 
   return (
-    <div>
-        {editable && (
-            <div style={{marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                <Button
-                    type="dashed"
-                    icon={<PlusOutlined/>}
-                    onClick={addMainTask}
-                >
-                    添加主任务
-                </Button>
-                {hasChanges && (
-                    <Button type="primary" onClick={saveAll}>
-                        保存全部
-                    </Button>
-                )}
-        </div>
-      )}
-      <Table
-        columns={columns}
-        dataSource={data}
-        loading={loading}
-        rowKey="id"
-        pagination={false}
-        expandable={{
-          defaultExpandAllRows: true,
-        }}
-        scroll={{ x: 1400 }}
-        size="middle"
-      />
+      <div>
+          <ConfigProvider
+              theme={{
+                  components: {
+                      Table: {
+                          headerBg: '#fafafa',
+                          headerColor: theme.colors.textPrimary,
+                          rowHoverBg: '#f5f5f5',
+                          borderColor: theme.colors.border,
+                          borderRadius: theme.borderRadius.md,
+                      },
+                  },
+              }}
+          >
+              <Table
+                  columns={columns}
+                  dataSource={data}
+                  loading={loading}
+                  rowKey="id"
+                  pagination={false}
+                  expandable={{
+                      defaultExpandAllRows: true,
+                  }}
+                  scroll={{x: 1400}}
+                  size="middle"
+                  style={{borderRadius: theme.borderRadius.md, overflow: 'hidden'}}
+              />
+          </ConfigProvider>
+          {editable && (
+              <div style={{marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                  <Button
+                      type="dashed"
+                      icon={<PlusOutlined/>}
+                      onClick={addMainTask}
+                  >
+                      添加主任务
+                  </Button>
+                  {hasChanges && (
+                      <Button type="primary" onClick={saveAll}>
+                          保存全部
+                      </Button>
+                  )}
+              </div>
+          )}
     </div>
   );
 };

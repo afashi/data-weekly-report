@@ -26,9 +26,10 @@ export class SqlAdapter implements OnModuleDestroy {
 
     /**
      * 查询 BRV 指标数据（示例：验证环境 ETL 状态）
+     * @param weekNumber 周次（如 202651）
      * @returns 标准化的指标数据
      */
-    async fetchBrvMetrics(): Promise<MetricData[]> {
+    async fetchBrvMetrics(weekNumber: number): Promise<MetricData[]> {
         const queryName = 'metrics_brv';
         const sql = this.sqlQueries[queryName];
 
@@ -36,8 +37,8 @@ export class SqlAdapter implements OnModuleDestroy {
             throw new Error(`SQL 查询配置不存在: ${queryName}`);
         }
 
-        this.logger.log(`开始执行 BRV 指标查询: ${queryName}`);
-        const result = await this.executeQuery(this.getDefaultDbName(), sql);
+        this.logger.log(`开始执行 BRV 指标查询: ${queryName} (周次: ${weekNumber})`);
+        const result = await this.executeQuery(this.getDefaultDbName(), sql, [weekNumber]);
 
         // 转换查询结果为指标数据
         return this.normalizeMetrics(queryName, result.rows);
@@ -45,9 +46,10 @@ export class SqlAdapter implements OnModuleDestroy {
 
     /**
      * 查询 REV 指标数据（示例：评审环境 ETL 状态）
+     * @param weekNumber 周次（如 202651）
      * @returns 标准化的指标数据
      */
-    async fetchRevMetrics(): Promise<MetricData[]> {
+    async fetchRevMetrics(weekNumber: number): Promise<MetricData[]> {
         const queryName = 'etl_status_rev';
         const sql = this.sqlQueries[queryName];
 
@@ -55,8 +57,8 @@ export class SqlAdapter implements OnModuleDestroy {
             throw new Error(`SQL 查询配置不存在: ${queryName}`);
         }
 
-        this.logger.log(`开始执行 REV 指标查询: ${queryName}`);
-        const result = await this.executeQuery(this.getDefaultDbName(), sql);
+        this.logger.log(`开始执行 REV 指标查询: ${queryName} (周次: ${weekNumber})`);
+        const result = await this.executeQuery(this.getDefaultDbName(), sql, [weekNumber]);
 
         return this.normalizeMetrics(queryName, result.rows);
     }
@@ -134,9 +136,13 @@ export class SqlAdapter implements OnModuleDestroy {
      * 执行 SQL 查询
      * @param dbName 数据库名称
      * @param sql SQL 语句
+     * @param params SQL 查询参数（可选）
      * @returns 查询结果
      */
-    private async executeQuery(dbName: string, sql: string): Promise<{ rows: any[]; rowCount: number }> {
+    private async executeQuery(dbName: string, sql: string, params?: any[]): Promise<{
+        rows: any[];
+        rowCount: number
+    }> {
         const pool = this.pools.get(dbName);
         if (!pool) {
             throw new Error(`数据库连接池不存在: ${dbName}`);
@@ -148,7 +154,7 @@ export class SqlAdapter implements OnModuleDestroy {
             client = await pool.connect();
             this.logger.debug(`执行 SQL 查询 - 数据库: ${dbName}`);
 
-            const result = await client.query(sql);
+            const result = await client.query(sql, params || []);
             this.logger.log(`SQL 查询成功 - 返回 ${result.rowCount} 行`);
 
             return {
@@ -177,11 +183,11 @@ export class SqlAdapter implements OnModuleDestroy {
             return [];
         }
 
-        // 假设查询结果格式：{ metric_key: string, metric_value: string, status: string }
+        // 假设查询结果格式：{ metric_key: string, metric_value: string, status_code: string }
         return rows.map((row) => ({
             metricKey: row.metric_key || queryName.toUpperCase(),
             metricValue: row.metric_value?.toString() || '0',
-            statusCode: this.mapStatus(row.status),
+            statusCode: this.mapStatus(row.status_code),
         }));
     }
 

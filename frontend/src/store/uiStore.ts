@@ -15,6 +15,10 @@ interface UIState {
     lastViewedReportId: string | null;
     setLastViewedReportId: (id: string) => void;
 
+    // 当前选中的周报 ID (用于版本选择器)
+    currentReportId: string | null;
+    setCurrentReportId: (id: string | null) => void;
+
     // 加载状态
     isGenerating: boolean;
     setIsGenerating: (value: boolean) => void;
@@ -34,6 +38,10 @@ export const useUIStore = create<UIState>((set) => ({
         // 持久化到 localStorage
         localStorage.setItem('lastViewedReportId', id);
     },
+
+    // 当前周报 ID
+    currentReportId: null,
+    setCurrentReportId: (id) => set({currentReportId: id}),
 
     // 生成状态
     isGenerating: false,
