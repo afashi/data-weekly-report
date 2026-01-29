@@ -1,5 +1,5 @@
 import React from 'react';
-import {useParams} from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 import {Button, Result, Space, Spin} from 'antd';
 import {DownloadOutlined, MenuOutlined, PlusOutlined} from '@ant-design/icons';
 import {useExportReport, useGenerateReport, useReportDetail} from '@/hooks';
@@ -16,6 +16,7 @@ import {theme} from '@/styles/theme';
  */
 const ReportPage: React.FC = () => {
     const {reportId} = useParams<{ reportId: string }>();
+    const navigate = useNavigate();
 
     // 获取周报详情数据
     const {data: report, isLoading, error} = useReportDetail(reportId || '');
@@ -40,7 +41,8 @@ const ReportPage: React.FC = () => {
     const handleGenerate = () => {
         generateReport(undefined, {
             onSuccess: (data) => {
-                // 跳转逻辑由 useGenerateReport Hook 处理
+                // 跳转到新生成的周报详情页
+                navigate(`/reports/${data.id}`);
             },
         });
     };

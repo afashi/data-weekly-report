@@ -33,6 +33,7 @@ export class ItemAPI {
 
     /**
      * 批量更新手动条目(SELF 标签页)
+     * PUT /api/reports/:id/manual-items（符合需求规格的路径）
      * 全量替换指定周报的 SELF 标签页数据
      */
     static async updateManualItems(
@@ -40,7 +41,7 @@ export class ItemAPI {
         items: UpdateManualItemsRequest['items']
     ): Promise<UpdateManualItemsResponse> {
         const response = await httpClient.put<UpdateManualItemsResponse>(
-            `/items/reports/${reportId}/manual-items`,
+            `/reports/${reportId}/manual-items`,
             {items}
         );
         return response.data;

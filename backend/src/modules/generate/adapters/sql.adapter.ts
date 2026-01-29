@@ -26,7 +26,7 @@ export class SqlAdapter implements OnModuleDestroy {
 
     /**
      * 查询 BRV 指标数据（示例：验证环境 ETL 状态）
-     * @param weekNumber 周次（如 202651）
+     * @param weekNumber 周次（如 202651）- 注意：实际传入当前日期
      * @returns 标准化的指标数据
      */
     async fetchBrvMetrics(weekNumber: number): Promise<MetricData[]> {
@@ -34,19 +34,33 @@ export class SqlAdapter implements OnModuleDestroy {
         const sql = this.sqlQueries[queryName];
 
         if (!sql) {
-            throw new Error(`SQL 查询配置不存在: ${queryName}`);
+            this.logger.warn(`SQL 查询配置不存在: ${queryName}`);
+            return [];
         }
 
-        this.logger.log(`开始执行 BRV 指标查询: ${queryName} (周次: ${weekNumber})`);
-        const result = await this.executeQuery(this.getDefaultDbName(), sql, [weekNumber]);
+        try {
+            this.logger.log(`开始执行 BRV 指标查询: ${queryName} (周次: ${weekNumber})`);
 
-        // 转换查询结果为指标数据
-        return this.normalizeMetrics(queryName, result.rows);
+            // 传入当前日期而不是周数
+            const now = new Date();
+            const result = await this.executeQuery(this.getDefaultDbName(), sql, [now]);
+
+            // 转换查询结果为指标数据
+            return this.normalizeMetrics(queryName, result.rows);
+        } catch (error) {
+            this.logger.warn(`BRV 指标查询失败，返回空数据: ${error.message}`);
+            // 返回默认值，避免阻塞周报生成
+            return [{
+                metricKey: 'VERIFY_ETL',
+                metricValue: '未配置',
+                statusCode: 'normal',
+            }];
+        }
     }
 
     /**
      * 查询 REV 指标数据（示例：评审环境 ETL 状态）
-     * @param weekNumber 周次（如 202651）
+     * @param weekNumber 周次（如 202651）- 注意：实际传入当前日期
      * @returns 标准化的指标数据
      */
     async fetchRevMetrics(weekNumber: number): Promise<MetricData[]> {
@@ -54,13 +68,28 @@ export class SqlAdapter implements OnModuleDestroy {
         const sql = this.sqlQueries[queryName];
 
         if (!sql) {
-            throw new Error(`SQL 查询配置不存在: ${queryName}`);
+            this.logger.warn(`SQL 查询配置不存在: ${queryName}`);
+            return [];
         }
 
-        this.logger.log(`开始执行 REV 指标查询: ${queryName} (周次: ${weekNumber})`);
-        const result = await this.executeQuery(this.getDefaultDbName(), sql, [weekNumber]);
+        try {
+            this.logger.log(`开始执行 REV 指标查询: ${queryName} (周次: ${weekNumber})`);
 
-        return this.normalizeMetrics(queryName, result.rows);
+            // 传入当前日期而不是周数
+            const now = new Date();
+            // 使用 rev_db 数据库而不是默认的 brv_db
+            const result = await this.executeQuery('rev_db', sql, [now]);
+
+            return this.normalizeMetrics(queryName, result.rows);
+        } catch (error) {
+            this.logger.warn(`REV 指标查询失败，返回空数据: ${error.message}`);
+            // 返回默认值，避免阻塞周报生成
+            return [{
+                metricKey: 'REVIEW_ETL',
+                metricValue: '未配置',
+                statusCode: 'normal',
+            }];
+        }
     }
 
     /**
@@ -152,7 +181,13 @@ export class SqlAdapter implements OnModuleDestroy {
 
         try {
             client = await pool.connect();
-            this.logger.debug(`执行 SQL 查询 - 数据库: ${dbName}`);
+
+            // 打印详细的查询信息
+            this.logger.log(`=== SQL 查询详情 ===`);
+            this.logger.log(`数据库: ${dbName}`);
+            this.logger.log(`SQL: ${sql}`);
+            this.logger.log(`参数: ${JSON.stringify(params || [])}`);
+            this.logger.log(`==================`);
 
             const result = await client.query(sql, params || []);
             this.logger.log(`SQL 查询成功 - 返回 ${result.rowCount} 行`);
@@ -183,11 +218,14 @@ export class SqlAdapter implements OnModuleDestroy {
             return [];
         }
 
-        // 假设查询结果格式：{ metric_key: string, metric_value: string, status_code: string }
+        // 根据查询名称生成指标 Key
+        const metricKey = queryName === 'metrics_brv' ? 'VERIFY_ETL' : 'REVIEW_ETL';
+
+        // 查询结果格式：{ start_ts: string, status: string }
         return rows.map((row) => ({
-            metricKey: row.metric_key || queryName.toUpperCase(),
-            metricValue: row.metric_value?.toString() || '0',
-            statusCode: this.mapStatus(row.status_code),
+            metricKey: metricKey,
+            metricValue: row.start_ts?.toString() || '未知',
+            statusCode: this.mapStatus(row.status),
         }));
     }
 
@@ -200,10 +238,10 @@ export class SqlAdapter implements OnModuleDestroy {
         if (!status) return 'normal';
 
         const statusLower = status.toLowerCase();
-        if (statusLower.includes('success') || statusLower.includes('ok')) {
+        if (statusLower.includes('已完成') || statusLower.includes('success') || statusLower.includes('ok')) {
             return 'success';
         }
-        if (statusLower.includes('loading') || statusLower.includes('pending')) {
+        if (statusLower.includes('加载中') || statusLower.includes('loading') || statusLower.includes('pending')) {
             return 'loading';
         }
         return 'normal';

@@ -6,11 +6,11 @@ import type {GenerateReportRequest, HealthCheckResponse, ReportResponse,} from '
  * 封装所有与周报生成相关的后端 API 调用
  */
 class GenerateApiService {
-    private readonly basePath = '/generate';
+    private readonly basePath = '/reports/generate';
 
     /**
      * 生成新周报
-     * POST /api/generate
+     * POST /api/reports/generate（符合需求规格的路径）
      *
      * @param params 生成参数（可选）
      * @returns 生成的周报数据

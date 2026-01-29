@@ -86,8 +86,9 @@ export class JiraAdapter {
             // 转换为统一格式
             return response.data.issues.map((issue) => this.normalizeIssue(issue));
         } catch (error) {
-            this.logger.error(`JQL 查询失败: ${error.message}`, error.stack);
-            throw new Error(`Jira API 调用失败: ${error.message}`);
+            this.logger.warn(`JQL 查询失败，返回空数据: ${error.message}`);
+            // 返回空数组，避免阻塞周报生成
+            return [];
         }
     }
 

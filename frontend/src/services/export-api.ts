@@ -6,12 +6,13 @@ import {httpClient} from './http-client';
 export class ExportAPI {
     /**
      * 导出周报为 Excel 文件
+     * GET /api/reports/:id/export（符合需求规格的路径）
      *
      * @param reportId 周报 ID
      * @returns Blob 数据（Excel 文件）
      */
     static async exportReport(reportId: string): Promise<Blob> {
-        const response = await httpClient.get(`/export/${reportId}`, {
+        const response = await httpClient.get(`/reports/${reportId}/export`, {
             responseType: 'blob', // 重要：告诉 axios 返回二进制数据
         });
         return response.data;
