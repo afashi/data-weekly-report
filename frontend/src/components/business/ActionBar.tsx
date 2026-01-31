@@ -1,13 +1,10 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Button, Space, Tooltip} from 'antd';
-import {
-    PlusOutlined,
-    DownloadOutlined,
-    MenuOutlined,
-} from '@ant-design/icons';
-import {useGenerateReport, useExportReport} from '@/hooks';
+import {DownloadOutlined, MenuOutlined, PlusOutlined,} from '@ant-design/icons';
+import {useExportReport, useGenerateReport} from '@/hooks';
 import {useUIStore} from '@/store/uiStore';
 import {useNavigate} from 'react-router-dom';
+import {GenerateProgress} from './GenerateProgress';
 
 /**
  * ActionBar 操作栏组件
@@ -30,6 +27,7 @@ interface ActionBarProps {
 export const ActionBar: React.FC<ActionBarProps> = ({reportId, weekRange}) => {
     const navigate = useNavigate();
     const {toggleSidebar} = useUIStore();
+    const [showProgress, setShowProgress] = useState(false);
 
     // 生成周报 Hook
     const {mutate: generateReport, isPending: isGenerating} = useGenerateReport();
@@ -42,10 +40,18 @@ export const ActionBar: React.FC<ActionBarProps> = ({reportId, weekRange}) => {
      * 生成成功后自动跳转到新周报详情页
      */
     const handleGenerate = () => {
+        setShowProgress(true);
         generateReport(undefined, {
             onSuccess: (data) => {
-                // 跳转到新生成的周报详情页
-                navigate(`/reports/${data.id}`);
+                // 进度条完成后跳转到新生成的周报详情页
+                setTimeout(() => {
+                    setShowProgress(false);
+                    navigate(`/reports/${data.id}`);
+                }, 500);
+            },
+            onError: () => {
+                // 发生错误时关闭进度条
+                setShowProgress(false);
             },
         });
     };
@@ -62,40 +68,50 @@ export const ActionBar: React.FC<ActionBarProps> = ({reportId, weekRange}) => {
     };
 
     return (
-        <Space size="middle">
-            {/* 生成周报按钮 */}
-            <Tooltip title="生成新的周报">
-                <Button
-                    type="primary"
-                    icon={<PlusOutlined/>}
-                    loading={isGenerating}
-                    onClick={handleGenerate}
-                >
-                    生成周报
-                </Button>
-            </Tooltip>
+        <>
+            <Space size="middle">
+                {/* 生成周报按钮 */}
+                <Tooltip title="生成新的周报">
+                    <Button
+                        type="primary"
+                        icon={<PlusOutlined/>}
+                        loading={isGenerating}
+                        onClick={handleGenerate}
+                    >
+                        生成周报
+                    </Button>
+                </Tooltip>
 
-            {/* 导出 Excel 按钮 */}
-            <Tooltip title={!reportId ? '请先选择或生成周报' : '导出当前周报为 Excel'}>
-                <Button
-                    icon={<DownloadOutlined/>}
-                    loading={isExporting}
-                    disabled={!reportId || !weekRange}
-                    onClick={handleExport}
-                >
-                    导出 Excel
-                </Button>
-            </Tooltip>
+                {/* 导出 Excel 按钮 */}
+                <Tooltip title={!reportId ? '请先选择或生成周报' : '导出当前周报为 Excel'}>
+                    <Button
+                        icon={<DownloadOutlined/>}
+                        loading={isExporting}
+                        disabled={!reportId || !weekRange}
+                        onClick={handleExport}
+                    >
+                        导出 Excel
+                    </Button>
+                </Tooltip>
 
-            {/* 切换侧边栏按钮 */}
-            <Tooltip title="显示/隐藏会议待办">
-                <Button
-                    icon={<MenuOutlined/>}
-                    onClick={toggleSidebar}
-                >
-                    会议待办
-                </Button>
-            </Tooltip>
-        </Space>
+                {/* 切换侧边栏按钮 */}
+                <Tooltip title="显示/隐藏会议待办">
+                    <Button
+                        icon={<MenuOutlined/>}
+                        onClick={toggleSidebar}
+                    >
+                        会议待办
+                    </Button>
+                </Tooltip>
+            </Space>
+
+            {/* 周报生成进度条 */}
+            <GenerateProgress
+                visible={showProgress}
+                onComplete={() => {
+                    // 进度条完成回调（已在 handleGenerate 中处理跳转）
+                }}
+            />
+        </>
     );
 };

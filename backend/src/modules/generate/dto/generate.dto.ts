@@ -1,4 +1,4 @@
-import {IsArray, IsEnum, IsNumber, IsOptional, IsString, ValidateNested} from 'class-validator';
+import {IsArray, IsBoolean, IsEnum, IsNumber, IsOptional, IsString, ValidateNested} from 'class-validator';
 import {Type} from 'class-transformer';
 
 /**
@@ -12,6 +12,10 @@ export class GenerateReportDto {
     @IsNumber()
     @IsOptional()
     weekNumber?: number; // 可选的周数，如第 3 周
+
+    @IsBoolean()
+    @IsOptional()
+    overwrite?: boolean; // 是否允许更新现有周报，默认false
 }
 
 /**

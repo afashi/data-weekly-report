@@ -7,6 +7,10 @@ import {BaseIdEntity} from '../common/entities/base-id.entity';
  */
 @Entity({name: 'reports'})
 @Index('idx_reports_is_deleted_created_at', ['isDeleted', 'createdAt'])
+@Index('idx_reports_week_range_unique', ['weekRange'], {
+    unique: true,
+    where: 'is_deleted = 0'
+})
 export class ReportEntity extends BaseIdEntity {
     @Column({name: 'week_range', type: 'varchar', length: 32, comment: '周周期描述，如 2026/01/12-2026/01/18'})
     weekRange: string;

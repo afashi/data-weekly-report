@@ -46,4 +46,11 @@ export class ItemAPI {
         );
         return response.data;
     }
+
+    /**
+     * 删除条目（软删除）
+     */
+    static async deleteItem(id: string): Promise<void> {
+        await httpClient.delete(`/items/${id}`);
+    }
 }

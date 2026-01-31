@@ -33,6 +33,7 @@ export class ExportService {
    */
   async exportReport(reportId: string): Promise<Buffer> {
     this.logger.log(`开始导出周报 - ID: ${reportId}`);
+      const startTime = Date.now();
 
     // 查询周报数据
     const report = await this.reportRepository.findOne({
@@ -59,7 +60,7 @@ export class ExportService {
     ]);
 
     this.logger.log(
-      `数据查询完成 - Metrics: ${metrics.length}, Items: ${items.length}`,
+        `数据查询完成 - Metrics: ${metrics.length}, Items: ${items.length} (耗时: ${Date.now() - startTime}ms)`,
     );
 
     // 创建 Excel 工作簿
@@ -82,7 +83,8 @@ export class ExportService {
 
     // 生成 Buffer
     const buffer = await workbook.xlsx.writeBuffer();
-    this.logger.log(`Excel 导出成功 - ID: ${reportId}`);
+      const totalTime = Date.now() - startTime;
+      this.logger.log(`Excel 导出成功 - ID: ${reportId} (总耗时: ${totalTime}ms)`);
 
     return Buffer.from(buffer);
   }

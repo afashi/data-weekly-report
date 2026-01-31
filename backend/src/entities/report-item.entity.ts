@@ -54,4 +54,7 @@ export class ReportItemEntity extends BaseIdEntity {
 
     @Column({name: 'sort_order', type: 'int', comment: '排序权重'})
     sortOrder: number;
+
+    @Column({name: 'is_deleted', type: 'boolean', default: false, comment: '软删除标记'})
+    isDeleted: boolean;
 }

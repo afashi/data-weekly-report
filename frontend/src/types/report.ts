@@ -2,6 +2,9 @@
  * 前端业务领域类型定义
  */
 
+// 导入 Zod Schema 生成的类型
+import type {DoneTaskContent, PlanTaskContent, SelfTaskContent, TaskContent,} from './schemas';
+
 /**
  * 标签类型
  */
@@ -30,34 +33,40 @@ export interface Metric {
 
 /**
  * 报表条目（树形结构节点）
+ * 支持泛型以提供更强的类型安全性
+ *
+ * @template TContent 任务内容类型，默认为 TaskContent 联合类型
+ *
+ * @example
+ * ```typescript
+ * // 使用默认类型
+ * const item: ReportItem = { ... };
+ *
+ * // 使用特定类型
+ * const doneItem: ReportItem<DoneTaskContent> = { ... };
+ * const planItem: ReportItem<PlanTaskContent> = { ... };
+ * ```
  */
-export interface ReportItem {
+export interface ReportItem<TContent = TaskContent> {
     id: string;
     tabType: TabType;
     sourceType: SourceType;
     parentId?: string;
-    content: TaskContent; // 已解析的业务数据
+    content: TContent; // 已解析的业务数据（使用 Zod Schema 验证）
     sortOrder: number;
-    children?: ReportItem[]; // 子节点（用于自采数据的树形结构）
+    children?: ReportItem<TContent>[]; // 子节点（用于自采数据的树形结构）
 }
 
 /**
- * 任务内容（业务数据）
+ * 特定 Tab 类型的 ReportItem 类型别名
+ * 提供更精确的类型推导和类型安全
  */
-export interface TaskContent {
-    jiraKey: string; // Jira 号
-    title: string; // 任务名称
-    status: string; // 状态
-    assignee: string; // 负责人
-    storyPoints?: number; // 工作量
-    workDays?: number; // 工期（天）
-    devStatus?: string; // 开发环境状态
-    testStatus?: string; // 测试环境状态
-    verifyStatus?: string; // 验证环境状态
-    reviewStatus?: string; // 评审环境状态
-    prodStatus?: string; // 生产环境状态
-    [key: string]: any; // 支持扩展
-}
+export type DoneReportItem = ReportItem<DoneTaskContent>;
+export type PlanReportItem = ReportItem<PlanTaskContent>;
+export type SelfReportItem = ReportItem<SelfTaskContent>;
+
+// 重新导出 Zod Schema 生成的类型，方便其他模块使用
+export type {TaskContent, DoneTaskContent, PlanTaskContent, SelfTaskContent};
 
 /**
  * 周报完整数据（前端 Store 使用）

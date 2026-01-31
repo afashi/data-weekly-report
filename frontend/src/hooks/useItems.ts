@@ -1,7 +1,6 @@
-import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {useOptimisticMutation} from './useOptimisticMutation';
 import {ItemAPI} from '@/services/item-api';
 import {reportKeys} from './useReports';
-import {message} from 'antd';
 import type {UpdateManualItemsRequest} from '@/types/api';
 
 /**
@@ -14,41 +13,12 @@ import type {UpdateManualItemsRequest} from '@/types/api';
  * mutate({ id: '123', contentJson: { title: '新标题' } });
  */
 export function useUpdateItem() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
+    return useOptimisticMutation({
         mutationFn: ({id, contentJson}: { id: string; contentJson: Record<string, any> }) =>
             ItemAPI.updateItem(id, contentJson),
-        onMutate: async () => {
-            // 乐观更新：立即更新 UI，不等待服务器响应
-            // 这样用户体验更流畅！(￣▽￣)ノ
-
-            // 取消正在进行的查询，避免覆盖乐观更新
-            await queryClient.cancelQueries({queryKey: reportKeys.details()});
-
-            // 保存之前的数据，用于回滚
-            const previousData = queryClient.getQueriesData({queryKey: reportKeys.details()});
-
-            return {previousData};
-        },
-        onSuccess: (data) => {
-            // 使相关周报详情缓存失效
-            queryClient.invalidateQueries({
-                queryKey: reportKeys.detail(data.reportId)
-            });
-
-            message.success('保存成功！');
-        },
-        onError: (error: Error, _, context) => {
-            // 回滚乐观更新
-            if (context?.previousData) {
-                context.previousData.forEach(([queryKey, data]) => {
-                    queryClient.setQueryData(queryKey, data);
-                });
-            }
-
-            message.error(`保存失败：${error.message}`);
-        },
+        queryKey: reportKeys.details(),
+        successMessage: '保存成功！',
+        errorMessage: '保存失败：',
     });
 }
 
@@ -68,9 +38,7 @@ export function useUpdateItem() {
  * });
  */
 export function useUpdateManualItems() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
+    return useOptimisticMutation({
         mutationFn: ({
                          reportId,
                          items,
@@ -78,16 +46,26 @@ export function useUpdateManualItems() {
             reportId: string;
             items: UpdateManualItemsRequest['items'];
         }) => ItemAPI.updateManualItems(reportId, items),
-        onSuccess: (data) => {
-            // 使相关周报详情缓存失效，触发重新获取
-            queryClient.invalidateQueries({
-                queryKey: reportKeys.detail(data.reportId),
-            });
+        queryKey: reportKeys.details(),
+        successMessage: '批量保存成功！',
+        errorMessage: '批量保存失败：',
+    });
+}
 
-            message.success(`成功保存 ${data.count} 条数据！`);
-        },
-        onError: (error: Error) => {
-            message.error(`批量保存失败：${error.message}`);
-        },
+/**
+ * 删除条目
+ *
+ * @returns Mutation 对象
+ *
+ * @example
+ * const { mutate, isPending } = useDeleteItem();
+ * mutate({ id: '123' });
+ */
+export function useDeleteItem() {
+    return useOptimisticMutation({
+        mutationFn: ({id}: { id: string }) => ItemAPI.deleteItem(id),
+        queryKey: reportKeys.details(),
+        successMessage: '删除成功！',
+        errorMessage: '删除失败：',
     });
 }

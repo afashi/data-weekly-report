@@ -1,4 +1,4 @@
-import {Injectable, Logger} from '@nestjs/common';
+import {ConflictException, Injectable, Logger} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {DataSource, Repository} from 'typeorm';
 import {endOfWeek, format, getWeek, startOfWeek} from 'date-fns';
@@ -47,82 +47,75 @@ export class GenerateService {
 
         this.logger.log(`开始生成周报 - 周范围: ${weekRange}, 周数: ${weekNumber}`);
 
-        // 使用事务确保数据一致性
-        return await this.dataSource.transaction(async (manager) => {
-            // 1. 创建 Report 主记录
-            const reportId = this.idService.nextId();
-            const report = manager.create(ReportEntity, {
-                id: reportId,
-                weekRange,
-                weekNumber,
-                isDeleted: false,
-            });
-            await manager.save(report);
-            this.logger.log(`Report 创建成功 - ID: ${reportId}`);
+        // 检查是否已存在同一周期的周报
+        const existing = await this.reportRepository.findOne({
+            where: {weekRange, isDeleted: false},
+        });
 
-            // 2. 并行获取所有数据源
-            const [jiraDoneTasks, jiraPlanTasks, brvMetrics, revMetrics] = await Promise.all([
-                this.jiraAdapter.fetchDoneTasks(),
-                this.jiraAdapter.fetchPlanTasks(),
-                this.sqlAdapter.fetchBrvMetrics(weekNumber),
-                this.sqlAdapter.fetchRevMetrics(weekNumber),
-            ]);
+        if (existing && !dto.overwrite) {
+            throw new ConflictException(`周报已存在: ${weekRange}，如需更新请设置overwrite=true`);
+        }
 
-            this.logger.log(
-                `数据源获取完成 - Jira DONE: ${jiraDoneTasks.length}, PLAN: ${jiraPlanTasks.length}, BRV: ${brvMetrics.length}, REV: ${revMetrics.length}`,
-            );
+        if (existing && dto.overwrite) {
+            this.logger.log(`更新模式 - 现有周报ID: ${existing.id}`);
+            // 更新模式：删除旧数据，保留ID
+            return await this.updateReport(existing.id, weekRange, weekNumber);
+        }
 
-            // 3. 保存系统指标
-            const metrics: SystemMetricEntity[] = [];
-            const allMetrics = [...brvMetrics, ...revMetrics];
+        // 第一阶段：并行获取外部数据（不在事务内）
+        const reportId = this.idService.nextId();
+        const [jiraDoneTasks, jiraPlanTasks, brvMetrics, revMetrics] = await Promise.all([
+            this.jiraAdapter.fetchDoneTasks(),
+            this.jiraAdapter.fetchPlanTasks(),
+            this.sqlAdapter.fetchBrvMetrics(weekNumber),
+            this.sqlAdapter.fetchRevMetrics(weekNumber),
+        ]);
 
-            for (const metric of allMetrics) {
-                const metricId = this.idService.nextId();
-                const metricEntity = manager.create(SystemMetricEntity, {
+        this.logger.log(
+            `数据源获取完成 - Jira DONE: ${jiraDoneTasks.length}, PLAN: ${jiraPlanTasks.length}, BRV: ${brvMetrics.length}, REV: ${revMetrics.length}`,
+        );
+
+        const metrics: SystemMetricEntity[] = [];
+        const allMetrics = [...brvMetrics, ...revMetrics];
+
+        for (const metric of allMetrics) {
+            const metricId = this.idService.nextId();
+            metrics.push(
+                this.metricRepository.create({
                     id: metricId,
                     reportId,
                     metricKey: metric.metricKey,
                     metricValue: metric.metricValue,
                     statusCode: metric.statusCode,
-                });
-                metrics.push(metricEntity);
-            }
+                }),
+            );
+        }
 
-            if (metrics.length > 0) {
-                await manager.save(metrics);
-                this.logger.log(`保存 ${metrics.length} 条系统指标`);
-            }
+        const doneItems: ReportItemEntity[] = [];
+        let sortOrder = 0;
 
-            // 4. 保存 Jira 任务（DONE 标签）
-            const doneItems: ReportItemEntity[] = [];
-            let sortOrder = 0;
-
-            for (const task of jiraDoneTasks) {
-                const itemId = this.idService.nextId();
-                const itemEntity = manager.create(ReportItemEntity, {
+        for (const task of jiraDoneTasks) {
+            const itemId = this.idService.nextId();
+            doneItems.push(
+                this.itemRepository.create({
                     id: itemId,
                     reportId,
                     tabType: 'DONE',
                     sourceType: 'JIRA',
-                    parentId: null, // Jira 任务默认为根节点
+                    parentId: null,
                     contentJson: JSON.stringify(task),
                     sortOrder: sortOrder++,
-                });
-                doneItems.push(itemEntity);
-            }
+                }),
+            );
+        }
 
-            if (doneItems.length > 0) {
-                await manager.save(doneItems);
-                this.logger.log(`保存 ${doneItems.length} 条 DONE 任务`);
-            }
+        const planItems: ReportItemEntity[] = [];
+        sortOrder = 0;
 
-            // 5. 保存 Jira 任务（PLAN 标签）
-            const planItems: ReportItemEntity[] = [];
-            sortOrder = 0;
-
-            for (const task of jiraPlanTasks) {
-                const itemId = this.idService.nextId();
-                const itemEntity = manager.create(ReportItemEntity, {
+        for (const task of jiraPlanTasks) {
+            const itemId = this.idService.nextId();
+            planItems.push(
+                this.itemRepository.create({
                     id: itemId,
                     reportId,
                     tabType: 'PLAN',
@@ -130,27 +123,52 @@ export class GenerateService {
                     parentId: null,
                     contentJson: JSON.stringify(task),
                     sortOrder: sortOrder++,
-                });
-                planItems.push(itemEntity);
+                }),
+            );
+        }
+
+        const note = this.noteRepository.create({
+            id: this.idService.nextId(),
+            reportId,
+            content: '',
+        });
+        const reportData = this.reportRepository.create({
+            id: reportId,
+            weekRange,
+            weekNumber,
+            isDeleted: false,
+        });
+
+        // 第二阶段：事务内快速写入
+        return await this.dataSource.transaction(async (manager) => {
+            // 1. 创建 Report 主记录
+            const report = await manager.save(ReportEntity, reportData);
+            this.logger.log(`Report 创建成功 - ID: ${reportId}`);
+
+            // 2. 保存系统指标
+            if (metrics.length > 0) {
+                await manager.save(SystemMetricEntity, metrics);
+                this.logger.log(`保存 ${metrics.length} 条系统指标`);
             }
 
+            // 3. 保存 Jira 任务（DONE 标签）
+            if (doneItems.length > 0) {
+                await manager.save(ReportItemEntity, doneItems);
+                this.logger.log(`保存 ${doneItems.length} 条 DONE 任务`);
+            }
+
+            // 4. 保存 Jira 任务（PLAN 标签）
             if (planItems.length > 0) {
-                await manager.save(planItems);
+                await manager.save(ReportItemEntity, planItems);
                 this.logger.log(`保存 ${planItems.length} 条 PLAN 任务`);
             }
 
-            // 6. 初始化空的 Meeting Notes（由前端手动填写）
-            const noteId = this.idService.nextId();
-            const note = manager.create(MeetingNoteEntity, {
-                id: noteId,
-                reportId,
-                content: '', // 初始为空
-            });
-            await manager.save(note);
+            // 5. 初始化空的 Meeting Notes（由前端手动填写）
+            await manager.save(MeetingNoteEntity, note);
 
             this.logger.log(`周报生成完成 - Report ID: ${reportId}`);
 
-            // 7. 构建响应 DTO
+            // 6. 构建响应 DTO
             return this.buildReportResponse(report, metrics, [...doneItems, ...planItems], note);
         });
     }
@@ -182,6 +200,126 @@ export class GenerateService {
             sql: sqlStatus,
             database: databaseOk,
         };
+    }
+
+    /**
+     * 更新现有周报
+     * @param reportId 现有周报ID
+     * @param weekRange 周范围
+     * @param weekNumber 周数
+     * @returns 更新后的周报数据
+     */
+    private async updateReport(reportId: string, weekRange: string, weekNumber: number): Promise<ReportResponseDto> {
+        // 第一阶段：并行获取外部数据（不在事务内）
+        const [jiraDoneTasks, jiraPlanTasks, brvMetrics, revMetrics] = await Promise.all([
+            this.jiraAdapter.fetchDoneTasks(),
+            this.jiraAdapter.fetchPlanTasks(),
+            this.sqlAdapter.fetchBrvMetrics(weekNumber),
+            this.sqlAdapter.fetchRevMetrics(weekNumber),
+        ]);
+
+        this.logger.log(
+            `数据源获取完成 - Jira DONE: ${jiraDoneTasks.length}, PLAN: ${jiraPlanTasks.length}, BRV: ${brvMetrics.length}, REV: ${revMetrics.length}`,
+        );
+
+        const metrics: SystemMetricEntity[] = [];
+        const allMetrics = [...brvMetrics, ...revMetrics];
+
+        for (const metric of allMetrics) {
+            const metricId = this.idService.nextId();
+            metrics.push(
+                this.metricRepository.create({
+                    id: metricId,
+                    reportId,
+                    metricKey: metric.metricKey,
+                    metricValue: metric.metricValue,
+                    statusCode: metric.statusCode,
+                }),
+            );
+        }
+
+        const allItems: ReportItemEntity[] = [];
+        let sortOrder = 0;
+
+        for (const task of jiraDoneTasks) {
+            const itemId = this.idService.nextId();
+            allItems.push(
+                this.itemRepository.create({
+                    id: itemId,
+                    reportId,
+                    tabType: 'DONE',
+                    sourceType: 'JIRA',
+                    parentId: null,
+                    contentJson: JSON.stringify(task),
+                    sortOrder: sortOrder++,
+                }),
+            );
+        }
+
+        for (const task of jiraPlanTasks) {
+            const itemId = this.idService.nextId();
+            allItems.push(
+                this.itemRepository.create({
+                    id: itemId,
+                    reportId,
+                    tabType: 'PLAN',
+                    sourceType: 'JIRA',
+                    parentId: null,
+                    contentJson: JSON.stringify(task),
+                    sortOrder: sortOrder++,
+                }),
+            );
+        }
+
+        const note = this.noteRepository.create({
+            id: this.idService.nextId(),
+            reportId,
+            content: '',
+        });
+
+        // 第二阶段：事务内快速写入
+        return await this.dataSource.transaction(async (manager) => {
+            // 1. 删除旧的关联数据
+            await manager.delete(SystemMetricEntity, {reportId: reportId as any});
+            await manager.delete(ReportItemEntity, {reportId: reportId as any});
+            await manager.delete(MeetingNoteEntity, {reportId: reportId as any});
+
+            this.logger.log(`已删除旧数据 - Report ID: ${reportId}`);
+
+            // 2. 更新Report主记录的时间戳
+            await manager.update(ReportEntity, reportId as any, {
+                weekRange,
+                weekNumber,
+            });
+
+            const report = await manager.findOne(ReportEntity, {
+                where: {id: reportId as any},
+            });
+
+            if (!report) {
+                throw new Error(`周报不存在 - ID: ${reportId}`);
+            }
+
+            // 3. 保存系统指标
+            if (metrics.length > 0) {
+                await manager.save(SystemMetricEntity, metrics);
+                this.logger.log(`保存 ${metrics.length} 条系统指标`);
+            }
+
+            // 4. 保存 Jira 任务（DONE 和 PLAN）
+            if (allItems.length > 0) {
+                await manager.save(ReportItemEntity, allItems);
+                this.logger.log(`保存 ${allItems.length} 条任务`);
+            }
+
+            // 5. 初始化空的 Meeting Notes
+            await manager.save(MeetingNoteEntity, note);
+
+            this.logger.log(`周报更新完成 - Report ID: ${reportId}`);
+
+            // 6. 构建响应 DTO
+            return this.buildReportResponse(report, metrics, allItems, note);
+        });
     }
 
     /**

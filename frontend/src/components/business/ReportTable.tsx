@@ -19,6 +19,8 @@ interface ReportTableProps {
   onSave?: (item: ReportItem) => Promise<void>;
     /** 新增一行回调 */
     onAdd?: (item: Partial<ReportItem>) => Promise<void>;
+    /** 删除一行回调 */
+    onDelete?: (id: string) => Promise<void>;
   /** 表格类型（用于区分 DONE/PLAN） */
   tableType: 'DONE' | 'PLAN';
 }
@@ -44,6 +46,7 @@ const ReportTable: React.FC<ReportTableProps> = ({
   editable = true,
   onSave,
                                                      onAdd,
+                                                     onDelete,
                                                      tableType,
 }) => {
   const [editingKey, setEditingKey] = useState<string>('');
@@ -119,16 +122,27 @@ const ReportTable: React.FC<ReportTableProps> = ({
     /**
      * 删除行
      */
-    const deleteRow = (record: ReportItem) => {
+    const deleteRow = async (record: ReportItem) => {
         // 如果是临时 ID，直接从本地数据中删除
         if (record.id.startsWith('temp_')) {
             setLocalData(localData.filter(item => item.id !== record.id));
             message.success('删除成功');
         } else {
-            // TODO: 调用后端删除 API
-            message.info('删除功能待实现');
-    }
-  };
+            // 调用后端删除 API
+            if (onDelete) {
+                try {
+                    await onDelete(record.id);
+                    // 删除成功后从本地数据中移除
+                    setLocalData(localData.filter(item => item.id !== record.id));
+                } catch (error) {
+                    // 错误处理已在 useDeleteItem Hook 中完成
+                    console.error('Delete error:', error);
+                }
+            } else {
+                message.warning('删除功能未配置');
+            }
+        }
+    };
 
   /**
    * 更新编辑数据

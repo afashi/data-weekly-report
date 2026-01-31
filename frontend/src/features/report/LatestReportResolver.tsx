@@ -35,7 +35,7 @@ export default function LatestReportResolver() {
      */
     const handleGenerate = () => {
         generateReport(undefined, {
-            onSuccess: (data) => {
+            onSuccess: (_data) => {
                 // 跳转逻辑由 useGenerateReport Hook 处理
             },
         });

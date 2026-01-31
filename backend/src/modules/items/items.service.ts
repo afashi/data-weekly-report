@@ -234,4 +234,28 @@ export class ItemsService {
             await queryRunner.release();
         }
     }
+
+    /**
+     * 软删除条目
+     * @param id 条目 ID
+     * @returns void
+     */
+    async deleteItem(id: string): Promise<void> {
+        this.logger.log(`软删除条目 - ID: ${id}`);
+
+        // 查询条目
+        const item = await this.itemRepository.findOne({
+            where: {id: id as any},
+        });
+
+        if (!item) {
+            throw new NotFoundException(`条目不存在 - ID: ${id}`);
+        }
+
+        // 执行软删除（设置 is_deleted = true）
+        item.isDeleted = true;
+        await this.itemRepository.save(item);
+
+        this.logger.log(`条目软删除成功 - ID: ${id}`);
+    }
 }

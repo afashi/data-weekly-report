@@ -1,4 +1,4 @@
-import {Body, Controller, Logger, Param, Patch, Post, Put,} from '@nestjs/common';
+import {Body, Controller, Delete, HttpCode, HttpStatus, Logger, Param, Patch, Post, Put,} from '@nestjs/common';
 import {ItemsService} from './items.service';
 import {
     CreateItemDto,
@@ -117,6 +117,27 @@ export class ItemsController {
             return result;
         } catch (error) {
             this.logger.error(`批量更新手动条目失败: ${error.message}`, error.stack);
+            throw error;
+        }
+    }
+
+    /**
+     * DELETE /api/items/:id
+     * 软删除条目
+     *
+     * @param id 条目 ID
+     * @returns 204 No Content
+     */
+    @Delete('items/:id')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async deleteItem(@Param('id') id: string): Promise<void> {
+        this.logger.log(`收到删除条目请求 - ID: ${id}`);
+
+        try {
+            await this.itemsService.deleteItem(id);
+            this.logger.log(`条目删除成功 - ID: ${id}`);
+        } catch (error) {
+            this.logger.error(`条目删除失败: ${error.message}`, error.stack);
             throw error;
         }
     }

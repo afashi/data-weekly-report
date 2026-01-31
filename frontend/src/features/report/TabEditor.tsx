@@ -3,6 +3,7 @@ import {useState} from 'react';
 import ReportTable from '@/components/business/ReportTable';
 import TreeTable from '@/components/business/TreeTable';
 import {ItemAPI} from '@/services/item-api';
+import {useDeleteItem} from '@/hooks/useItems';
 import type {ReportItemDto} from '@/types/api';
 import type {ReportItem} from '@/types';
 
@@ -19,6 +20,7 @@ interface TabEditorProps {
  */
 export default function TabEditor({items, reportId, onUpdate}: TabEditorProps) {
   const [loading, setLoading] = useState(false);
+    const {mutateAsync: deleteItem} = useDeleteItem();
 
   // 按 tabType 分组数据
   const doneItems = items.filter((item) => item.tabType === 'DONE');
@@ -130,6 +132,13 @@ export default function TabEditor({items, reportId, onUpdate}: TabEditorProps) {
         }
     };
 
+    // 处理删除（DONE/PLAN Tab）
+    const handleDeleteItem = async (id: string) => {
+        await deleteItem({id});
+        // 删除成功后刷新数据
+        onUpdate?.();
+    };
+
   const tabItems = [
     {
       key: 'DONE',
@@ -141,6 +150,7 @@ export default function TabEditor({items, reportId, onUpdate}: TabEditorProps) {
           loading={loading}
               onSave={handleSaveItem}
               onAdd={handleAddItem}
+              onDelete={handleDeleteItem}
         />
       ),
     },
@@ -165,6 +175,7 @@ export default function TabEditor({items, reportId, onUpdate}: TabEditorProps) {
           loading={loading}
               onSave={handleSaveItem}
               onAdd={handleAddItem}
+              onDelete={handleDeleteItem}
         />
       ),
     },
