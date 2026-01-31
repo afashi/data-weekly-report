@@ -75,7 +75,7 @@ sqlQueries:
     LIMIT 2
 
 excel:
-  templatePath: "数据周报_模板.xlsx"
+  templatePath: "../数据周报_模板.xlsx"  # 相对于 backend 目录的路径
   indentSize: 4
 
 ui:

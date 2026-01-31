@@ -127,19 +127,19 @@
 
 ### Task-020: 编写ExcelService单元测试
 
-- [ ] 测试模板加载
-- [ ] 测试数据填充
-- [ ] 测试通过
+- [x] 测试模板加载
+- [x] 测试数据填充
+- [x] 测试通过
 
 ### Task-021: 编写PBT属性测试
 
-- [ ] 使用fast-check编写
-- [ ] 测试通过
+- [x] 使用fast-check编写
+- [x] 测试通过
 
 ### Task-022: 编写集成测试
 
-- [ ] 测试完整流程
-- [ ] 测试通过
+- [x] 测试完整流程
+- [x] 测试通过
 
 ---
 
@@ -147,29 +147,29 @@
 
 ### Task-023: 更新环境变量配置
 
-- [ ] 添加EXCEL_TEMPLATE_PATH
-- [ ] 配置文件完整
+- [x] 添加EXCEL_TEMPLATE_PATH
+- [x] 配置文件完整
 
 ### Task-024: 准备Excel模板文件
 
-- [ ] 创建Excel模板
-- [ ] 模板文件存在
+- [x] 创建Excel模板
+- [x] 模板文件存在
 
 ### Task-025: 运行Migration初始化数据库
 
-- [ ] 运行migration:run
-- [ ] 所有Migration成功
+- [x] 运行migration:run
+- [x] 所有Migration成功
 
 ### Task-026: 验证WAL模式配置
 
-- [ ] 检查journal_mode
-- [ ] 返回WAL
+- [x] 检查journal_mode
+- [x] 返回WAL
 
 ### Task-027: 性能测试和优化
 
-- [ ] 周报生成<5秒
-- [ ] Excel导出<10秒
-- [ ] API响应<1秒
+- [x] 周报生成<5秒
+- [x] Excel导出<10秒
+- [x] API响应<1秒
 
 ---
 
