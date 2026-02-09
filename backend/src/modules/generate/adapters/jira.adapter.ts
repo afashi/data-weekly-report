@@ -75,6 +75,8 @@ export class JiraAdapter {
      */
     private async executeJqlQuery(jql: string): Promise<NormalizedTask[]> {
         try {
+            this.logger.log(`执行 JQL 查询: ${jql}`);
+
             const response = await this.axiosInstance.post<JiraSearchResponse>('/rest/api/2/search', {
                 jql,
                 fields: this.config.fields,
@@ -86,7 +88,9 @@ export class JiraAdapter {
             // 转换为统一格式
             return response.data.issues.map((issue) => this.normalizeIssue(issue));
         } catch (error) {
-            this.logger.warn(`JQL 查询失败，返回空数据: ${error.message}`);
+            this.logger.error(`JQL 查询失败 - JQL: ${jql}`);
+            this.logger.error(`错误详情: ${error.response?.data ? JSON.stringify(error.response.data) : error.message}`);
+            this.logger.warn(`返回空数据，避免阻塞周报生成`);
             // 返回空数组，避免阻塞周报生成
             return [];
         }

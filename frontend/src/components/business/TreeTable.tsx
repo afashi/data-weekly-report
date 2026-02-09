@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Button, ConfigProvider, Input, InputNumber, message, Select, Space, Table} from 'antd';
-import {DeleteOutlined, PlusOutlined} from '@ant-design/icons';
+import {CheckCircleOutlined, ClockCircleOutlined, DeleteOutlined, PlusOutlined, SyncOutlined} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
 import type {ReportItem} from '@/types';
 import {theme} from '@/styles/theme';
@@ -24,6 +24,10 @@ interface TreeTableProps {
  * 用于展示 SELF 标签页的树形表格，支持主任务-子任务两层结构
  * 采用全量提交模式，编辑后需点击"保存全部"按钮
  *
+ * ✅ UI 改进：
+ * - 使用图标+文本组合替代 emoji，确保跨平台一致性
+ * - 统一状态选择器样式
+ *
  * @example
  * ```tsx
  * <TreeTable
@@ -34,6 +38,38 @@ interface TreeTableProps {
  * />
  * ```
  */
+
+// ✅ 统一的状态选项配置（使用图标+文本）
+const STATUS_OPTIONS = [
+  {
+    label: (
+      <Space size={4}>
+        <CheckCircleOutlined style={{ color: '#52c41a' }} />
+        <span>已完成</span>
+      </Space>
+    ),
+    value: 'done'
+  },
+  {
+    label: (
+      <Space size={4}>
+        <SyncOutlined style={{ color: '#1890ff' }} />
+        <span>进行中</span>
+      </Space>
+    ),
+    value: 'doing'
+  },
+  {
+    label: (
+      <Space size={4}>
+        <ClockCircleOutlined style={{ color: '#faad14' }} />
+        <span>待处理</span>
+      </Space>
+    ),
+    value: 'pending'
+  },
+];
+
 const TreeTable: React.FC<TreeTableProps> = ({
   dataSource,
   loading = false,
@@ -259,66 +295,46 @@ const TreeTable: React.FC<TreeTableProps> = ({
       title: '开发',
       dataIndex: ['content', 'devStatus'],
       key: 'devStatus',
-      width: 80,
+      width: 100,
       align: 'center',
       render: (text, record) =>
-        renderEditableCell(text, record, 'devStatus', 'select', [
-          { label: '✅', value: 'done' },
-          { label: '🔄', value: 'doing' },
-          { label: '⏸️', value: 'pending' },
-        ]),
+        renderEditableCell(text, record, 'devStatus', 'select', STATUS_OPTIONS),
     },
     {
       title: '测试',
       dataIndex: ['content', 'testStatus'],
       key: 'testStatus',
-      width: 80,
+      width: 100,
       align: 'center',
       render: (text, record) =>
-        renderEditableCell(text, record, 'testStatus', 'select', [
-          { label: '✅', value: 'done' },
-          { label: '🔄', value: 'doing' },
-          { label: '⏸️', value: 'pending' },
-        ]),
+        renderEditableCell(text, record, 'testStatus', 'select', STATUS_OPTIONS),
     },
     {
       title: '验证',
       dataIndex: ['content', 'verifyStatus'],
       key: 'verifyStatus',
-      width: 80,
+      width: 100,
       align: 'center',
       render: (text, record) =>
-        renderEditableCell(text, record, 'verifyStatus', 'select', [
-          { label: '✅', value: 'done' },
-          { label: '🔄', value: 'doing' },
-          { label: '⏸️', value: 'pending' },
-        ]),
+        renderEditableCell(text, record, 'verifyStatus', 'select', STATUS_OPTIONS),
     },
     {
       title: '复盘',
       dataIndex: ['content', 'reviewStatus'],
       key: 'reviewStatus',
-      width: 80,
+      width: 100,
       align: 'center',
       render: (text, record) =>
-        renderEditableCell(text, record, 'reviewStatus', 'select', [
-          { label: '✅', value: 'done' },
-          { label: '🔄', value: 'doing' },
-          { label: '⏸️', value: 'pending' },
-        ]),
+        renderEditableCell(text, record, 'reviewStatus', 'select', STATUS_OPTIONS),
     },
     {
       title: '生产',
       dataIndex: ['content', 'prodStatus'],
       key: 'prodStatus',
-      width: 80,
+      width: 100,
       align: 'center',
       render: (text, record) =>
-        renderEditableCell(text, record, 'prodStatus', 'select', [
-          { label: '✅', value: 'done' },
-          { label: '🔄', value: 'doing' },
-          { label: '⏸️', value: 'pending' },
-        ]),
+        renderEditableCell(text, record, 'prodStatus', 'select', STATUS_OPTIONS),
     },
   ];
 

@@ -1,5 +1,6 @@
 import {Inject, Injectable, Logger, OnModuleDestroy} from '@nestjs/common';
 import {Pool, PoolClient} from 'pg';
+import {format} from 'date-fns';
 import {ExternalDbConfig, SqlQueriesConfig} from '../../../config/config.types';
 import {MetricData} from '../types/sql.types';
 
@@ -221,12 +222,39 @@ export class SqlAdapter implements OnModuleDestroy {
         // 根据查询名称生成指标 Key
         const metricKey = queryName === 'metrics_brv' ? 'VERIFY_ETL' : 'REVIEW_ETL';
 
+        // 打印原始数据用于调试
+        this.logger.log(`=== ${queryName} 原始数据 ===`);
+        this.logger.log(`行数: ${rows.length}`);
+        rows.forEach((row, index) => {
+            this.logger.log(`第 ${index + 1} 行: ${JSON.stringify(row)}`);
+        });
+        this.logger.log(`==================`);
+
         // 查询结果格式：{ start_ts: string, status: string }
-        return rows.map((row) => ({
-            metricKey: metricKey,
-            metricValue: row.start_ts?.toString() || '未知',
-            statusCode: this.mapStatus(row.status),
-        }));
+        return rows.map((row) => {
+            let formattedTime = '未知';
+
+            if (row.start_ts) {
+                try {
+                    // 将数据库返回的时间转换为 Date 对象
+                    const date = new Date(row.start_ts);
+                    // 格式化为 yyyy-MM-dd HH:mm
+                    formattedTime = format(date, 'yyyy-MM-dd HH:mm');
+                    this.logger.log(`时间格式化成功: ${row.start_ts} -> ${formattedTime}`);
+                } catch (error) {
+                    this.logger.error(`时间格式化失败: ${row.start_ts}, 错误: ${error.message}`);
+                    formattedTime = '格式错误';
+                }
+            } else {
+                this.logger.warn(`${queryName} 的 start_ts 字段为空或未定义`);
+            }
+
+            return {
+                metricKey: metricKey,
+                metricValue: formattedTime,
+                statusCode: this.mapStatus(row.status),
+            };
+        });
     }
 
     /**

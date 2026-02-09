@@ -168,8 +168,8 @@ export class GenerateService {
 
             this.logger.log(`周报生成完成 - Report ID: ${reportId}`);
 
-            // 6. 构建响应 DTO
-            return this.buildReportResponse(report, metrics, [...doneItems, ...planItems], note);
+            // 6. 构建响应 DTO（使用原始 reportId 而不是 report.id）
+            return this.buildReportResponse(reportId, report, metrics, [...doneItems, ...planItems], note);
         });
     }
 
@@ -317,8 +317,8 @@ export class GenerateService {
 
             this.logger.log(`周报更新完成 - Report ID: ${reportId}`);
 
-            // 6. 构建响应 DTO
-            return this.buildReportResponse(report, metrics, allItems, note);
+            // 6. 构建响应 DTO（使用原始 reportId 而不是 report.id）
+            return this.buildReportResponse(reportId, report, metrics, allItems, note);
         });
     }
 
@@ -346,13 +346,14 @@ export class GenerateService {
      * 构建响应 DTO
      */
     private buildReportResponse(
+        reportId: string,
         report: ReportEntity,
         metrics: SystemMetricEntity[],
         items: ReportItemEntity[],
         note: MeetingNoteEntity,
     ): ReportResponseDto {
         return {
-            id: report.id.toString(),
+            id: reportId,
             weekRange: report.weekRange,
             weekNumber: report.weekNumber,
             createdAt: report.createdAt.toISOString(),

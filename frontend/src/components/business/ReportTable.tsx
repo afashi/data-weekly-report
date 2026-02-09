@@ -1,6 +1,15 @@
 import React, {useState} from 'react';
 import {Button, ConfigProvider, Input, InputNumber, message, Popconfirm, Select, Space, Table} from 'antd';
-import {CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SaveOutlined} from '@ant-design/icons';
+import {
+    CheckCircleOutlined,
+    ClockCircleOutlined,
+    CloseOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    PlusOutlined,
+    SaveOutlined,
+    SyncOutlined
+} from '@ant-design/icons';
 import type {ColumnsType} from 'antd/es/table';
 import type {ReportItem} from '@/types';
 import {theme} from '@/styles/theme';
@@ -29,6 +38,10 @@ interface ReportTableProps {
  * 报表表格组件
  * 用于展示 DONE 和 PLAN 标签页的二维表格，支持行内编辑
  *
+ * ✅ UI 改进：
+ * - 环境状态列使用下拉选择替代自由输入
+ * - 统一状态选择器样式（图标+文本）
+ *
  * @example
  * ```tsx
  * <ReportTable
@@ -40,6 +53,38 @@ interface ReportTableProps {
  * />
  * ```
  */
+
+// ✅ 统一的环境状态选项配置（使用图标+文本）
+const ENV_STATUS_OPTIONS = [
+  {
+    label: (
+      <Space size={4}>
+        <CheckCircleOutlined style={{ color: '#52c41a' }} />
+        <span>已完成</span>
+      </Space>
+    ),
+    value: 'done'
+  },
+  {
+    label: (
+      <Space size={4}>
+        <SyncOutlined style={{ color: '#1890ff' }} />
+        <span>进行中</span>
+      </Space>
+    ),
+    value: 'doing'
+  },
+  {
+    label: (
+      <Space size={4}>
+        <ClockCircleOutlined style={{ color: '#faad14' }} />
+        <span>待处理</span>
+      </Space>
+    ),
+    value: 'pending'
+  },
+];
+
 const ReportTable: React.FC<ReportTableProps> = ({
   dataSource,
   loading = false,
@@ -301,36 +346,36 @@ const ReportTable: React.FC<ReportTableProps> = ({
                 title: '开发环境',
                 dataIndex: ['content', 'devStatus'],
                 key: 'devStatus',
-                width: 100,
-                render: (text, record) => renderEditableCell(text, record, 'devStatus'),
+                width: 120,
+                render: (text, record) => renderEditableCell(text, record, 'devStatus', 'select', ENV_STATUS_OPTIONS),
             },
             {
                 title: '测试环境',
                 dataIndex: ['content', 'testStatus'],
                 key: 'testStatus',
-                width: 100,
-                render: (text, record) => renderEditableCell(text, record, 'testStatus'),
+                width: 120,
+                render: (text, record) => renderEditableCell(text, record, 'testStatus', 'select', ENV_STATUS_OPTIONS),
             },
             {
                 title: '验证环境',
                 dataIndex: ['content', 'verifyStatus'],
                 key: 'verifyStatus',
-                width: 100,
-                render: (text, record) => renderEditableCell(text, record, 'verifyStatus'),
+                width: 120,
+                render: (text, record) => renderEditableCell(text, record, 'verifyStatus', 'select', ENV_STATUS_OPTIONS),
             },
             {
                 title: '复盘环境',
                 dataIndex: ['content', 'reviewStatus'],
                 key: 'reviewStatus',
-                width: 100,
-                render: (text, record) => renderEditableCell(text, record, 'reviewStatus'),
+                width: 120,
+                render: (text, record) => renderEditableCell(text, record, 'reviewStatus', 'select', ENV_STATUS_OPTIONS),
             },
             {
                 title: '生产环境',
                 dataIndex: ['content', 'prodStatus'],
                 key: 'prodStatus',
-                width: 100,
-                render: (text, record) => renderEditableCell(text, record, 'prodStatus'),
+                width: 120,
+                render: (text, record) => renderEditableCell(text, record, 'prodStatus', 'select', ENV_STATUS_OPTIONS),
             }
         );
     }

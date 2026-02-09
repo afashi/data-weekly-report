@@ -27,10 +27,10 @@ async function runMigrations() {
         // 手动创建表结构
         console.log('正在创建表结构...');
 
-        // 1. reports 表
+        // 1. reports 表 (ID 使用 TEXT 类型防止精度丢失)
         await dataSource.query(`
       CREATE TABLE IF NOT EXISTS reports (
-        id INTEGER PRIMARY KEY,
+        id TEXT PRIMARY KEY,
         week_range VARCHAR(32) NOT NULL,
         week_number INTEGER NOT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -43,11 +43,11 @@ async function runMigrations() {
     `);
         console.log('✅ reports 表已创建');
 
-        // 2. system_metrics 表
+        // 2. system_metrics 表 (ID 使用 TEXT 类型防止精度丢失)
         await dataSource.query(`
       CREATE TABLE IF NOT EXISTS system_metrics (
-        id INTEGER PRIMARY KEY,
-        report_id INTEGER NOT NULL,
+        id TEXT PRIMARY KEY,
+        report_id TEXT NOT NULL,
         metric_key VARCHAR(64) NOT NULL,
         metric_value VARCHAR(128) NOT NULL,
         status_code VARCHAR(32) NOT NULL
@@ -63,16 +63,17 @@ async function runMigrations() {
     `);
         console.log('✅ system_metrics 表已创建');
 
-        // 3. report_items 表
+        // 3. report_items 表 (ID 使用 TEXT 类型防止精度丢失)
         await dataSource.query(`
       CREATE TABLE IF NOT EXISTS report_items (
-        id INTEGER PRIMARY KEY,
-        report_id INTEGER NOT NULL,
+        id TEXT PRIMARY KEY,
+        report_id TEXT NOT NULL,
         tab_type VARCHAR(16) NOT NULL,
         source_type VARCHAR(16) NOT NULL,
-        parent_id INTEGER,
+        parent_id TEXT,
         content_json TEXT NOT NULL,
-        sort_order INTEGER NOT NULL
+        sort_order INTEGER NOT NULL,
+        is_deleted BOOLEAN NOT NULL DEFAULT 0
       )
     `);
         await dataSource.query(`
@@ -89,11 +90,11 @@ async function runMigrations() {
     `);
         console.log('✅ report_items 表已创建');
 
-        // 4. meeting_notes 表
+        // 4. meeting_notes 表 (ID 使用 TEXT 类型防止精度丢失)
         await dataSource.query(`
       CREATE TABLE IF NOT EXISTS meeting_notes (
-        id INTEGER PRIMARY KEY,
-        report_id INTEGER NOT NULL,
+        id TEXT PRIMARY KEY,
+        report_id TEXT NOT NULL,
         content TEXT NOT NULL
       )
     `);

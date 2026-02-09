@@ -8,9 +8,9 @@ import {MeetingNoteEntity} from '../../entities/meeting-note.entity';
 import {IdService} from '../id/id.service';
 import {
     GetReportsDto,
-    ReportListResponseDto,
     ReportDetailResponseDto,
     ReportListItemDto,
+    ReportListResponseDto,
     UpdateManualItemsDto,
 } from './dto/reports.dto';
 
@@ -83,9 +83,12 @@ export class ReportsService {
     async getReportById(id: string): Promise<ReportDetailResponseDto> {
         this.logger.log(`查询周报详情 - ID: ${id}`);
 
-        // 查询主报告
+        // 使用 findOne 方法，会正确应用 BaseIdEntity 的 transformer
         const report = await this.reportRepository.findOne({
-            where: {id: id as any, isDeleted: false},
+            where: {
+                id: id as any,
+                isDeleted: false,
+            },
         });
 
         if (!report) {
@@ -142,8 +145,12 @@ export class ReportsService {
     async deleteReport(id: string): Promise<void> {
         this.logger.log(`软删除周报 - ID: ${id}`);
 
+        // 使用 findOne 方法，会正确应用 BaseIdEntity 的 transformer
         const report = await this.reportRepository.findOne({
-            where: {id: id as any, isDeleted: false},
+            where: {
+                id: id as any,
+                isDeleted: false,
+            },
         });
 
         if (!report) {
@@ -166,9 +173,12 @@ export class ReportsService {
     async updateManualItems(reportId: string, dto: UpdateManualItemsDto): Promise<any[]> {
         this.logger.log(`更新自采数据 - 周报ID: ${reportId}, 条目数: ${dto.items.length}`);
 
-        // 验证周报是否存在
+        // 使用 findOne 方法验证周报是否存在
         const report = await this.reportRepository.findOne({
-            where: {id: reportId as any, isDeleted: false},
+            where: {
+                id: reportId as any,
+                isDeleted: false,
+            },
         });
 
         if (!report) {

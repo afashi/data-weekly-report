@@ -1,6 +1,8 @@
-import {useMutation, UseMutationResult, useQuery, UseQueryResult} from '@tanstack/react-query';
+import {useMutation, UseMutationResult, useQuery, useQueryClient, UseQueryResult} from '@tanstack/react-query';
 import {generateApi} from '../services';
 import type {GenerateReportRequest, HealthCheckResponse, ReportResponse} from '../types';
+import {reportKeys} from './useReports';
+import {message} from 'antd';
 
 /**
  * React Query Hooks
@@ -19,13 +21,24 @@ export function useGenerateReport(): UseMutationResult<
     Error,
     GenerateReportRequest | undefined
 > {
+    const queryClient = useQueryClient();
+
     return useMutation({
         mutationFn: (params?: GenerateReportRequest) => generateApi.generateReport(params),
         onSuccess: (data) => {
             console.log('[React Query] 周报生成成功:', data.id);
+
+            // 使列表缓存失效，触发重新获取
+            queryClient.invalidateQueries({queryKey: reportKeys.lists()});
+
+            // 预填充详情缓存
+            queryClient.setQueryData(reportKeys.detail(data.id), data);
+
+            message.success('周报生成成功！');
         },
         onError: (error: Error) => {
             console.error('[React Query] 周报生成失败:', error.message);
+            message.error(`周报生成失败：${error.message}`);
         },
     });
 }

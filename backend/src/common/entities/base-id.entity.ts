@@ -11,7 +11,16 @@ import {Transform} from 'class-transformer';
  * 3. 自动序列化为 String（API 层，防止 JS 精度丢失）
  */
 export abstract class BaseIdEntity {
-    @PrimaryColumn({type: 'bigint', comment: 'Snowflake ID'})
+    @PrimaryColumn({
+        type: 'bigint',
+        comment: 'Snowflake ID',
+        transformer: {
+            // 从数据库读取时,确保转为字符串
+            from: (value: any) => (value == null ? value : String(value)),
+            // 写入数据库时,确保以字符串形式存储
+            to: (value: any) => (value == null ? value : String(value)),
+        },
+    })
     @Transform(({value}) => (value == null ? value : value.toString()), {
         toPlainOnly: true,
     })

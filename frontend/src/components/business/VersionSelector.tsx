@@ -1,8 +1,9 @@
-import React from 'react';
+import React, {useCallback, useMemo} from 'react';
 import type {MenuProps} from 'antd';
 import {Button, Dropdown, Modal, Space, Tag} from 'antd';
 import {CheckOutlined, DeleteOutlined, DownOutlined, ExclamationCircleOutlined,} from '@ant-design/icons';
-import {useDeleteReport, useReports} from '@/hooks';
+// ✅ bundle-barrel-imports: 直接导入避免桶文件
+import {useDeleteReport, useReports} from '@/hooks/useReports';
 import {useNavigate} from 'react-router-dom';
 import {useUIStore} from '@/store/uiStore';
 import dayjs from 'dayjs';
@@ -16,13 +17,29 @@ import dayjs from 'dayjs';
  * 3. 删除版本功能（调用 DELETE /api/reports/:id）
  * 4. 删除确认对话框（Modal.confirm）
  * 5. 当前版本高亮显示
+ *
+ * ✅ 性能优化：
+ * - 使用 useMemo 缓存菜单项和显示文本
+ * - 使用 useCallback 稳定回调函数引用
+ * - 使用 React.memo 避免不必要的重渲染
  */
 
-export const VersionSelector: React.FC = () => {
+// ✅ js-cache-function-results: 缓存日期格式化结果
+const formatDateCache = new Map<string, string>();
+const formatDate = (dateString: string): string => {
+    if (formatDateCache.has(dateString)) {
+        return formatDateCache.get(dateString)!;
+    }
+    const formatted = dayjs(dateString).format('YYYY-MM-DD HH:mm');
+    formatDateCache.set(dateString, formatted);
+    return formatted;
+};
+
+export const VersionSelector: React.FC = React.memo(() => {
     const navigate = useNavigate();
 
     // 从 store 获取当前选中的周报 ID
-    const {currentReportId} = useUIStore();
+    const currentReportId = useUIStore((state) => state.currentReportId);
 
     // 获取历史周报列表
     const {data: reportsData, isLoading} = useReports({page: 1, pageSize: 50});
@@ -31,21 +48,21 @@ export const VersionSelector: React.FC = () => {
     const {mutate: deleteReport, isPending: isDeleting} = useDeleteReport();
 
     /**
-     * 处理版本切换
-     * 跳转到指定周报详情页
+     * ✅ rerender-functional-setstate: 使用 useCallback 稳定回调引用
+     * 处理版本切换 - 跳转到指定周报详情页
      */
-    const handleVersionChange = (reportId: string) => {
+    const handleVersionChange = useCallback((reportId: string) => {
         if (reportId === currentReportId) {
             return; // 已经是当前版本，不需要跳转
         }
         navigate(`/reports/${reportId}`);
-    };
+    }, [currentReportId, navigate]);
 
     /**
-     * 处理删除版本
-     * 显示确认对话框，确认后删除
+     * ✅ rerender-functional-setstate: 使用 useCallback 稳定回调引用
+     * 处理删除版本 - 显示确认对话框，确认后删除
      */
-    const handleDeleteVersion = (reportId: string, weekRange: string) => {
+    const handleDeleteVersion = useCallback((reportId: string, weekRange: string) => {
         Modal.confirm({
             title: '确认删除周报',
             icon: <ExclamationCircleOutlined/>,
@@ -64,19 +81,13 @@ export const VersionSelector: React.FC = () => {
                 });
             },
         });
-    };
+    }, [deleteReport, currentReportId, navigate]);
 
     /**
-     * 格式化日期
-     */
-    const formatDate = (dateString: string): string => {
-        return dayjs(dateString).format('YYYY-MM-DD HH:mm');
-    };
-
-    /**
+     * ✅ rerender-derived-state-no-effect: 使用 useMemo 派生状态
      * 获取当前选中周报的显示文本
      */
-    const getCurrentDisplayText = (): string => {
+    const currentDisplayText = useMemo((): string => {
         if (!currentReportId || !reportsData?.items) {
             return '选择版本';
         }
@@ -85,38 +96,41 @@ export const VersionSelector: React.FC = () => {
             return '选择版本';
         }
         return `${currentReport.weekRange} (第${currentReport.weekNumber}周) - ${formatDate(currentReport.createdAt)}`;
-    };
+    }, [currentReportId, reportsData?.items]);
 
     /**
+     * ✅ rerender-memo-with-default-value: 使用 useMemo 缓存菜单项
      * 构建下拉菜单项
      */
-    const menuItems: MenuProps['items'] = reportsData?.items.map((report) => {
-        const isCurrent = report.id === currentReportId;
+    const menuItems: MenuProps['items'] = useMemo(() => {
+        return reportsData?.items.map((report) => {
+            const isCurrent = report.id === currentReportId;
 
-        return {
-            key: report.id,
-            label: (
-                <Space style={{width: '100%', justifyContent: 'space-between'}}>
-                    <Space>
-                        {isCurrent && <CheckOutlined style={{color: '#1677ff'}}/>}
-                        <span>{report.weekRange} (第{report.weekNumber}周) - {formatDate(report.createdAt)}</span>
-                        {isCurrent && <Tag color="blue">当前</Tag>}
+            return {
+                key: `report-${report.id}`, // 添加前缀确保key始终是string，避免React将大数字转换为Number导致精度丢失
+                label: (
+                    <Space style={{width: '100%', justifyContent: 'space-between'}}>
+                        <Space>
+                            {isCurrent && <CheckOutlined style={{color: '#1677ff'}}/>}
+                            <span>{report.weekRange} (第{report.weekNumber}周) - {formatDate(report.createdAt)}</span>
+                            {isCurrent && <Tag color="blue">当前</Tag>}
+                        </Space>
+                        <Button
+                            type="text"
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined/>}
+                            onClick={(e) => {
+                                e.stopPropagation(); // 阻止事件冒泡，避免触发版本切换
+                                handleDeleteVersion(report.id, report.weekRange);
+                            }}
+                        />
                     </Space>
-                    <Button
-                        type="text"
-                        size="small"
-                        danger
-                        icon={<DeleteOutlined/>}
-                        onClick={(e) => {
-                            e.stopPropagation(); // 阻止事件冒泡，避免触发版本切换
-                            handleDeleteVersion(report.id, report.weekRange);
-                        }}
-                    />
-                </Space>
-            ),
-            onClick: () => handleVersionChange(report.id),
-        };
-    }) || [];
+                ),
+                onClick: () => handleVersionChange(report.id),
+            };
+        }) || [];
+    }, [reportsData?.items, currentReportId, handleVersionChange, handleDeleteVersion]);
 
     return (
         <Dropdown
@@ -126,10 +140,10 @@ export const VersionSelector: React.FC = () => {
         >
             <Button>
                 <Space>
-                    {getCurrentDisplayText()}
+                    {currentDisplayText}
                     <DownOutlined/>
                 </Space>
             </Button>
         </Dropdown>
     );
-};
+});
